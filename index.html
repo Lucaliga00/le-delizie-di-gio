@@ -63,12 +63,21 @@
   .flbl { font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.4px; }
   input { font-family:inherit; font-size:14px; border:1px solid var(--bds); border-radius:9px; padding:10px 14px; background:var(--white); color:var(--text); outline:none; width:100%; }
   input:focus { border-color:var(--pasta-dark); box-shadow:0 0 0 3px var(--pasta-mid); }
+  input[type=date] { cursor:pointer; }
+
+  /* BOX DATA CONSEGNA */
+  .date-box { background:var(--pasta-light); border:1px solid var(--pasta-dark); border-radius:12px; padding:18px 20px; margin-bottom:18px; }
+  .date-box-title { font-size:14px; font-weight:700; color:var(--pasta-deep); margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+  .date-box-note { font-size:12px; color:var(--pasta-dark); margin-bottom:14px; line-height:1.5; background:var(--white); border-radius:8px; padding:10px 14px; border:1px solid var(--pasta-mid); }
+  .date-box-note strong { color:var(--pasta-deep); }
+
   .sbtn { width:100%; padding:14px; background:var(--pasta); color:var(--pasta-deep); border:none; border-radius:10px; font-size:15px; font-family:inherit; font-weight:700; cursor:pointer; margin-top:18px; transition:background .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
   .sbtn:hover { background:var(--pasta-dark); color:var(--white); }
   .sbtn:disabled { background:var(--off); color:var(--muted); cursor:not-allowed; border:1px solid var(--bd); }
   .succ { background:var(--white); border:1px solid var(--bd); border-radius:14px; padding:52px 32px; text-align:center; }
   .succ-icon { width:72px; height:72px; border-radius:50%; background:var(--pasta); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:32px; }
   .succ-id { font-family:monospace; font-size:14px; background:var(--pasta-light); padding:6px 16px; border-radius:8px; display:inline-block; margin:10px 0; color:var(--pasta-deep); font-weight:700; letter-spacing:1px; }
+  .succ-delivery { display:inline-flex; align-items:center; gap:6px; background:#EEF2FF; color:#3730A3; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:600; margin-top:8px; }
   .spinner { width:22px; height:22px; border:2.5px solid var(--pasta-mid); border-top-color:var(--pasta-deep); border-radius:50%; animation:sp .8s linear infinite; }
   @keyframes sp { to { transform:rotate(360deg); } }
   .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--pasta); color:var(--pasta-deep); font-weight:700; padding:12px 24px; border-radius:10px; font-size:13px; z-index:200; opacity:0; transition:opacity .3s; pointer-events:none; white-space:nowrap; }
@@ -91,6 +100,7 @@
 </header>
 
 <div class="wrap">
+
   <!-- CATALOGO -->
   <div class="pg active" id="pg-catalog">
     <div class="hero">
@@ -126,6 +136,20 @@
           <div class="fgr"><label class="flbl">Telefono</label><input type="tel" id="c-phone" placeholder="+39 333 1234567"/></div>
           <div class="fgr"><label class="flbl">Email</label><input type="email" id="c-email" placeholder="mario@esempio.it"/></div>
         </div>
+
+        <!-- BOX DATA CONSEGNA -->
+        <div class="date-box">
+          <div class="date-box-title">📅 Data di consegna preferita</div>
+          <div class="date-box-note">
+            Indica una data in cui vorresti ricevere il tuo ordine.<br>
+            <strong>Riceverai un messaggio di conferma o di proposta di modifica della data.</strong>
+          </div>
+          <div class="fgr">
+            <label class="flbl">Data preferita (opzionale)</label>
+            <input type="date" id="c-date" min="" />
+          </div>
+        </div>
+
         <button class="sbtn" id="sbtn" onclick="submitOrder()">📨 Invia ordine</button>
       </div>
     </div>
@@ -136,12 +160,19 @@
     <div class="succ">
       <div class="succ-icon">✓</div>
       <h2 style="font-size:22px;font-weight:700;margin-bottom:10px">Ordine inviato!</h2>
-      <p style="font-size:15px;color:var(--muted);margin-bottom:14px">Il tuo ordine è stato ricevuto con successo.<br>Ti contatteremo presto per la conferma.</p>
+      <p style="font-size:15px;color:var(--muted);margin-bottom:14px">
+        Il tuo ordine è stato ricevuto con successo.<br>
+        Ti contatteremo presto per la conferma.
+      </p>
       <div class="succ-id" id="succ-id"></div>
-      <p style="font-size:13px;color:var(--muted);margin-top:8px" id="succ-date"></p>
+      <p style="font-size:13px;color:var(--muted);margin-top:6px" id="succ-date"></p>
+      <div id="succ-delivery-wrap" style="margin-top:12px;display:none">
+        <div class="succ-delivery" id="succ-delivery"></div>
+      </div>
       <button class="sbtn" style="max-width:300px;margin:28px auto 0" onclick="backCat()">🧺 Torna al catalogo</button>
     </div>
   </div>
+
 </div>
 
 <div class="toast" id="toast"></div>
@@ -149,7 +180,6 @@
 <script>
 /* ================================================================
    CONFIGURAZIONE SUPABASE
-   Stessi valori del file admin.html
 ================================================================ */
 const SUPABASE_URL      = 'https://smfwthpstbrgphfrcgvk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtZnd0aHBzdGJyZ3BoZnJjZ3ZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDgyMDQsImV4cCI6MjA5NTU4NDIwNH0.Ut5bbEnXrJJz-m-c5sQ4qWkGDwhS7DWRt_k9P7gwvUo';
@@ -177,13 +207,19 @@ async function sbInsert(table, data) {
 ================================================================ */
 let products = [], cart = {}, qtys = {};
 
+// Imposta la data minima selezionabile (domani)
+window.addEventListener('DOMContentLoaded', () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  document.getElementById('c-date').min = tomorrow.toISOString().split('T')[0];
+});
+
 async function loadProducts() {
   document.getElementById('loading').style.display = 'flex';
   document.getElementById('pgrid').style.display   = 'none';
   document.getElementById('cat-empty').style.display = 'none';
-  try {
-    products = await sbSelect('products', 'order=name.asc');
-  } catch(e) { products = []; }
+  try { products = await sbSelect('products', 'order=name.asc'); }
+  catch(e) { products = []; }
   renderCat();
 }
 
@@ -280,7 +316,7 @@ function rmCart(id) {
 
 function updTotals() {
   const items = Object.values(cart);
-  const tot   = items.reduce((s, i) => s + i.qty * i.price, 0);
+  const tot = items.reduce((s, i) => s + i.qty * i.price, 0);
   document.getElementById('ci-count').textContent = items.length + ' prodott' + (items.length === 1 ? 'o' : 'i');
   document.getElementById('ci-total').textContent = '€ ' + tot.toFixed(2);
 }
@@ -290,22 +326,38 @@ async function submitOrder() {
   const cognome = document.getElementById('c-cognome').value.trim();
   const phone   = document.getElementById('c-phone').value.trim();
   const email   = document.getElementById('c-email').value.trim();
-  if (!nome || !cognome || !phone || !email) { toast('⚠ Compila tutti i campi'); return; }
+  const date    = document.getElementById('c-date').value;
+  if (!nome || !cognome || !phone || !email) { toast('⚠ Compila tutti i campi obbligatori'); return; }
   if (!email.includes('@')) { toast('⚠ Email non valida'); return; }
+
   const btn = document.getElementById('sbtn');
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Invio in corso...';
   const code = 'ORD-' + Date.now().toString(36).toUpperCase();
+
+  const orderData = {
+    order_code:     code,
+    customer_name:  nome + ' ' + cognome,
+    phone, email,
+    archived:       false,
+    items:          JSON.stringify(Object.values(cart).map(i => ({ id:i.id, name:i.name, price:i.price, qty:i.qty })))
+  };
+  if (date) orderData.delivery_date = date;
+
   try {
-    await sbInsert('orders', {
-      order_code:     code,
-      customer_name:  nome + ' ' + cognome,
-      phone, email,
-      archived:       false,
-      items:          JSON.stringify(Object.values(cart).map(i => ({ id:i.id, name:i.name, price:i.price, qty:i.qty })))
-    });
+    await sbInsert('orders', orderData);
     cart = {}; qtys = {}; updCC();
     document.getElementById('succ-id').textContent   = code;
-    document.getElementById('succ-date').textContent = new Date().toLocaleString('it-IT');
+    document.getElementById('succ-date').textContent = 'Ordine ricevuto il ' + new Date().toLocaleString('it-IT');
+
+    // Mostra la data di consegna nella schermata di successo
+    if (date) {
+      const [y,m,d] = date.split('-');
+      document.getElementById('succ-delivery').textContent = '📅 Data richiesta: ' + d + '/' + m + '/' + y + ' — Ti contatteremo per conferma';
+      document.getElementById('succ-delivery-wrap').style.display = 'block';
+    } else {
+      document.getElementById('succ-delivery-wrap').style.display = 'none';
+    }
+
     showPg('success');
   } catch(e) {
     toast('⚠ Errore nell\'invio. Riprova.');

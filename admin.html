@@ -46,6 +46,7 @@
   .btn-s { padding:5px 12px; font-size:12px; }
   .btn-d { background:#FCEBEB; color:#A32D2D; border-color:#F09595; }
   .btn-ok { background:#EAF3DE; color:#3B6D11; border-color:#C0DD97; }
+  .btn-print { background:#EEF2FF; color:#3730A3; border-color:#A5B4FC; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
   th { text-align:left; padding:10px 14px; color:var(--muted); font-weight:600; border-bottom:1px solid var(--bd); font-size:12px; text-transform:uppercase; letter-spacing:.4px; }
   td { padding:11px 14px; border-bottom:1px solid var(--bd); color:var(--text); vertical-align:middle; }
@@ -64,11 +65,7 @@
     border-color:var(--pasta-dark); box-shadow:0 0 0 3px var(--pasta-mid);
   }
   textarea { resize:vertical; min-height:80px; }
-  .upload-area {
-    border:2px dashed var(--bds); border-radius:12px; padding:20px;
-    display:flex; align-items:center; gap:16px; cursor:pointer;
-    transition:border-color .15s, background .15s; background:var(--off);
-  }
+  .upload-area { border:2px dashed var(--bds); border-radius:12px; padding:20px; display:flex; align-items:center; gap:16px; cursor:pointer; transition:border-color .15s, background .15s; background:var(--off); }
   .upload-area:hover, .upload-area.drag { border-color:var(--pasta-dark); background:var(--pasta-light); }
   .upload-area input[type=file] { display:none; }
   .img-thumb { width:90px; height:90px; border-radius:10px; object-fit:cover; border:1px solid var(--bd); flex-shrink:0; }
@@ -85,7 +82,7 @@
   .es-icon { font-size:40px; margin-bottom:10px; }
   .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; align-items:center; justify-content:center; }
   .overlay.open { display:flex; }
-  .mbox { background:var(--white); border-radius:14px; padding:28px; width:500px; max-height:85vh; overflow-y:auto; }
+  .mbox { background:var(--white); border-radius:14px; padding:28px; width:520px; max-height:85vh; overflow-y:auto; }
   .mh { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
   .mt { font-size:16px; font-weight:600; color:var(--text); }
   .dr { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--bd); font-size:13px; }
@@ -106,6 +103,37 @@
   @keyframes spin { to { transform:rotate(360deg); } }
   .config-banner { background:var(--pasta-light); border:1px solid var(--pasta-dark); border-radius:10px; padding:16px 20px; margin-bottom:20px; font-size:13px; color:var(--pasta-deep); display:none; }
   .config-banner.show { display:block; }
+  .cat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; }
+  .cat-card { background:var(--white); border:1px solid var(--bd); border-radius:14px; overflow:hidden; transition:border-color .15s; }
+  .cat-card:hover { border-color:var(--bds); }
+  .cat-img { width:100%; height:150px; object-fit:cover; background:var(--pasta-light); display:flex; align-items:center; justify-content:center; font-size:48px; }
+  .cat-img img { width:100%; height:150px; object-fit:cover; display:block; }
+  .cat-body { padding:14px; }
+  .cat-name { font-size:14px; font-weight:700; color:var(--text); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cat-desc { font-size:12px; color:var(--muted); line-height:1.4; height:32px; overflow:hidden; margin-bottom:8px; }
+  .cat-price { font-size:15px; font-weight:700; color:var(--pasta-deep); margin-bottom:12px; }
+  .cat-actions { display:flex; gap:8px; }
+  .del-card-btn { flex:1; padding:8px; border-radius:8px; border:1px solid #F09595; background:#FCEBEB; color:#A32D2D; font-size:13px; font-family:inherit; font-weight:600; cursor:pointer; transition:all .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .del-card-btn:hover { background:#A32D2D; color:#fff; border-color:#A32D2D; }
+  .edit-card-btn { flex:1; padding:8px; border-radius:8px; border:1px solid var(--bds); background:var(--white); color:var(--text); font-size:13px; font-family:inherit; font-weight:600; cursor:pointer; transition:all .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .edit-card-btn:hover { background:var(--pasta-light); border-color:var(--pasta-dark); color:var(--pasta-deep); }
+  .cat-count { font-size:13px; color:var(--muted); }
+  .delivery-badge { display:inline-flex; align-items:center; gap:5px; background:#EEF2FF; color:#3730A3; border-radius:6px; padding:3px 10px; font-size:12px; font-weight:600; }
+
+  /* ===================== STILE STAMPA ===================== */
+  @media print {
+    body * { visibility: hidden; }
+    #print-area, #print-area * { visibility: visible; }
+    #print-area {
+      position: fixed; inset: 0;
+      padding: 32px 40px;
+      background: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .no-print { display: none !important; }
+  }
+  #print-area { display:none; }
+  /* ======================================================== */
 </style>
 </head>
 <body>
@@ -130,7 +158,11 @@
       </div>
       <div class="ni" onclick="nav('products')" id="nav-products">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg>
-        Prodotti
+        Aggiungi prodotto
+      </div>
+      <div class="ni" onclick="nav('catalog')" id="nav-catalog">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        Catalogo prodotti
       </div>
     </nav>
   </div>
@@ -146,7 +178,7 @@
 
     <div class="content">
       <div class="config-banner" id="cfg-banner">
-        ⚠️ <strong>Configura Supabase:</strong> apri il file in un editor di testo e incolla le tue credenziali Supabase in cima (SUPABASE_URL e SUPABASE_ANON_KEY).
+        ⚠️ <strong>Configura Supabase:</strong> apri il file in un editor di testo e incolla le tue credenziali Supabase in cima.
       </div>
 
       <!-- DASHBOARD -->
@@ -173,7 +205,7 @@
         <div class="card"><div class="ch"><span class="ct">Ordini archiviati</span></div><div id="arc-wrap"><div class="es"><div class="es-icon">📦</div>Nessun ordine archiviato</div></div></div>
       </div>
 
-      <!-- PRODOTTI -->
+      <!-- PRODOTTI (form) -->
       <div class="pg" id="pg-products">
         <div class="card" id="pform">
           <div class="ch">
@@ -201,36 +233,51 @@
           </div>
           <div style="margin-top:18px"><button class="btn btn-p" id="save-btn" onclick="saveProd()">✓ <span id="sbtn-txt">Salva prodotto</span></button></div>
         </div>
-        <div class="card"><div class="ch"><span class="ct">Catalogo prodotti</span></div><div id="prod-wrap"><div class="es"><div class="es-icon">📦</div>Nessun prodotto ancora</div></div></div>
       </div>
+
+      <!-- CATALOGO -->
+      <div class="pg" id="pg-catalog">
+        <div class="card">
+          <div class="ch">
+            <div><span class="ct">Catalogo prodotti</span><span class="cat-count" id="cat-count" style="margin-left:10px"></span></div>
+            <button class="btn btn-p btn-s" onclick="nav('products')">+ Aggiungi prodotto</button>
+          </div>
+          <div id="cat-grid-wrap"><div class="es"><div class="es-icon">📦</div>Nessun prodotto ancora</div></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
-<!-- Modale ordine -->
+<!-- MODALE ORDINE -->
 <div class="overlay" id="modal">
   <div class="mbox">
-    <div class="mh"><span class="mt" id="m-title">Dettaglio ordine</span><button class="btn btn-s" onclick="closeMod()">✕ Chiudi</button></div>
+    <div class="mh">
+      <span class="mt" id="m-title">Dettaglio ordine</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-s btn-print" onclick="printOrder()">🖨 Stampa</button>
+        <button class="btn btn-s" onclick="closeMod()">✕ Chiudi</button>
+      </div>
+    </div>
     <div id="m-body"></div>
     <div style="margin-top:22px;display:flex;gap:8px;flex-wrap:wrap" id="m-act"></div>
   </div>
 </div>
+
+<!-- AREA DI STAMPA (invisibile, visibile solo in stampa) -->
+<div id="print-area"></div>
 
 <div class="toast" id="toast"></div>
 
 <script>
 /* ================================================================
    CONFIGURAZIONE SUPABASE
-   Vai su supabase.com → tuo progetto → Settings → API
-   e copia qui i tuoi valori
 ================================================================ */
 const SUPABASE_URL      = 'https://smfwthpstbrgphfrcgvk.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtZnd0aHBzdGJyZ3BoZnJjZ3ZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDgyMDQsImV4cCI6MjA5NTU4NDIwNH0.Ut5bbEnXrJJz-m-c5sQ4qWkGDwhS7DWRt_k9P7gwvUo';
-const STORAGE_BUCKET    = 'prodotti'; // nome del bucket che creerai
+const STORAGE_BUCKET    = 'prodotti';
 
-/* ================================================================
-   SUPABASE REST API — nessun SDK necessario
-================================================================ */
 const headers = {
   'apikey':        SUPABASE_ANON_KEY,
   'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
@@ -271,9 +318,10 @@ async function sbUploadImage(file) {
 ================================================================ */
 let products = [], orders = [], archive = [];
 let editId = null, currentImageUrl = '';
+let currentOrderForPrint = null;
 
 /* ================================================================
-   CARICAMENTO DATI
+   CARICAMENTO
 ================================================================ */
 async function load() {
   try {
@@ -282,29 +330,22 @@ async function load() {
       sbSelect('orders', 'archived=eq.false'),
       sbSelect('orders', 'archived=eq.true')
     ]);
-  } catch(e) {
-    console.error(e);
-    products = []; orders = []; archive = [];
-  }
+  } catch(e) { console.error(e); products=[]; orders=[]; archive=[]; }
   renderAll();
 }
 
 /* ================================================================
    UPLOAD IMMAGINE
 ================================================================ */
-function onDrag(e, entering) {
-  e.preventDefault();
-  document.getElementById('upload-area').classList.toggle('drag', entering);
-}
+function onDrag(e, entering) { e.preventDefault(); document.getElementById('upload-area').classList.toggle('drag', entering); }
 function onDrop(e) {
-  e.preventDefault();
-  document.getElementById('upload-area').classList.remove('drag');
+  e.preventDefault(); document.getElementById('upload-area').classList.remove('drag');
   const file = e.dataTransfer.files[0];
   if (file && file.type.startsWith('image/')) onFileSelect(file);
 }
 async function onFileSelect(file) {
   if (!file) return;
-  if (file.size > 5 * 1024 * 1024) { toast('⚠ Immagine troppo grande (max 5 MB)'); return; }
+  if (file.size > 5*1024*1024) { toast('⚠ Immagine troppo grande (max 5 MB)'); return; }
   const reader = new FileReader();
   reader.onload = e => {
     document.getElementById('img-ph').style.display = 'none';
@@ -325,8 +366,7 @@ async function onFileSelect(file) {
   } catch(err) {
     prog.style.display = 'none';
     document.getElementById('up-title').textContent = 'Clicca o trascina un\'immagine qui';
-    toast('⚠ Errore caricamento immagine. Controlla le credenziali Supabase.');
-    console.error(err);
+    toast('⚠ Errore caricamento immagine'); console.error(err);
   }
 }
 
@@ -334,9 +374,9 @@ async function onFileSelect(file) {
    PRODOTTI
 ================================================================ */
 async function saveProd() {
-  const name  = document.getElementById('p-name').value.trim();
+  const name = document.getElementById('p-name').value.trim();
   const price = document.getElementById('p-price').value.trim();
-  const desc  = document.getElementById('p-desc').value.trim();
+  const desc = document.getElementById('p-desc').value.trim();
   if (!name || !price) { toast('Nome e prezzo sono obbligatori'); return; }
   const btn = document.getElementById('save-btn');
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Salvataggio...';
@@ -350,11 +390,10 @@ async function saveProd() {
       await sbInsert('products', { name, price: parseFloat(price), description: desc, image_url: currentImageUrl });
       toast('Prodotto aggiunto ✓');
     }
-    clearForm(); await load();
+    clearForm(); await load(); if (!editId) nav('catalog');
   } catch(e) { toast('⚠ Errore nel salvataggio'); console.error(e); }
   btn.disabled = false; btn.innerHTML = '✓ <span id="sbtn-txt">Salva prodotto</span>';
 }
-
 function editProd(id) {
   const p = products.find(x => x.id === id); if (!p) return;
   editId = id;
@@ -368,19 +407,17 @@ function editProd(id) {
     document.getElementById('up-title').textContent = 'Immagine attuale';
     document.getElementById('up-sub').textContent   = 'Clicca per sostituirla';
   }
-  document.getElementById('ftitle').textContent    = 'Modifica prodotto';
-  document.getElementById('sbtn-txt').textContent  = 'Aggiorna prodotto';
+  document.getElementById('ftitle').textContent   = 'Modifica prodotto';
+  document.getElementById('sbtn-txt').textContent = 'Aggiorna prodotto';
   document.getElementById('cancel-btn').style.display = '';
   document.getElementById('pform').scrollIntoView({ behavior:'smooth' });
 }
-
 function cancelEdit() {
   editId = null; clearForm();
   document.getElementById('ftitle').textContent   = 'Aggiungi prodotto';
   document.getElementById('sbtn-txt').textContent = 'Salva prodotto';
   document.getElementById('cancel-btn').style.display = 'none';
 }
-
 function clearForm() {
   ['p-name','p-price','p-desc'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('file-input').value = '';
@@ -391,70 +428,145 @@ function clearForm() {
   document.getElementById('prog').style.display   = 'none';
   currentImageUrl = '';
 }
-
 async function delProd(id) {
   if (!confirm('Eliminare questo prodotto?')) return;
   try { await sbDelete('products', id); await load(); toast('Prodotto eliminato'); }
   catch(e) { toast('⚠ Errore nella eliminazione'); }
 }
+function goEditProd(id) { nav('products'); setTimeout(() => editProd(id), 50); }
 
 /* ================================================================
    ORDINI
 ================================================================ */
 async function archOrd(id) {
-  try {
-    await sbUpdate('orders', id, { archived: true, archived_at: new Date().toISOString() });
-    await load(); toast('Ordine completato e archiviato ✓');
-  } catch(e) { toast('⚠ Errore'); }
+  try { await sbUpdate('orders', id, { archived:true, archived_at:new Date().toISOString() }); await load(); toast('Ordine completato e archiviato ✓'); }
+  catch(e) { toast('⚠ Errore'); }
 }
 async function restOrd(id) {
-  try {
-    await sbUpdate('orders', id, { archived: false, archived_at: null });
-    await load(); toast('Ordine ripristinato');
-  } catch(e) { toast('⚠ Errore'); }
+  try { await sbUpdate('orders', id, { archived:false, archived_at:null }); await load(); toast('Ordine ripristinato'); }
+  catch(e) { toast('⚠ Errore'); }
 }
 
 function openOrd(id, fromArc = false) {
   const list = fromArc ? archive : orders;
   const o = list.find(x => x.id === id); if (!o) return;
-  document.getElementById('m-title').textContent = 'Ordine #' + o.order_code;
+  currentOrderForPrint = o;
   const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
+  const totale = items.reduce((s, i) => s + i.qty * i.price, 0);
   const iH = items.map(i =>
     `<div class="dr"><span class="dl">${i.name}</span><span>${i.qty} kg × €${parseFloat(i.price).toFixed(2)} = <strong>€${(i.qty*i.price).toFixed(2)}</strong></span></div>`
   ).join('');
+  const deliveryHtml = o.delivery_date
+    ? `<div class="dr"><span class="dl">📅 Data consegna richiesta</span><span class="delivery-badge">📅 ${fdDate(o.delivery_date)}</span></div>`
+    : '';
+  document.getElementById('m-title').textContent = 'Ordine #' + o.order_code;
   document.getElementById('m-body').innerHTML = `
     <div class="dr"><span class="dl">Codice ordine</span><code>${o.order_code}</code></div>
-    <div class="dr"><span class="dl">Data</span><span>${fd(o.created_at, true)}</span></div>
+    <div class="dr"><span class="dl">Data ordine</span><span>${fd(o.created_at, true)}</span></div>
+    ${deliveryHtml}
     <div class="dr"><span class="dl">Cliente</span><strong>${o.customer_name}</strong></div>
     <div class="dr"><span class="dl">Telefono</span><span>${o.phone}</span></div>
     <div class="dr"><span class="dl">Email</span><span>${o.email}</span></div>
-    <div style="margin:14px 0 6px;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px">PRODOTTI ORDINATI</div>${iH}`;
+    <div style="margin:14px 0 6px;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px">PRODOTTI ORDINATI</div>
+    ${iH}
+    <div class="dr" style="margin-top:4px"><span class="dl" style="font-weight:700">Totale stimato</span><strong style="color:var(--pasta-deep)">€ ${totale.toFixed(2)}</strong></div>`;
   document.getElementById('m-act').innerHTML = fromArc
     ? `<button class="btn" onclick="restOrd('${id}');closeMod()">↩ Ripristina</button>`
     : `<button class="btn btn-p" onclick="archOrd('${id}');closeMod()">✓ Segna come completato</button>`;
   document.getElementById('modal').classList.add('open');
 }
-function closeMod() { document.getElementById('modal').classList.remove('open'); }
+
+function closeMod() {
+  document.getElementById('modal').classList.remove('open');
+  currentOrderForPrint = null;
+}
+
+/* ================================================================
+   STAMPA ORDINE
+================================================================ */
+function printOrder() {
+  const o = currentOrderForPrint; if (!o) return;
+  const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
+  const totale = items.reduce((s, i) => s + i.qty * i.price, 0);
+  const deliveryRow = o.delivery_date
+    ? `<tr><td style="color:#888;padding:8px 0;border-bottom:1px solid #eee">📅 Data consegna richiesta</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:700;color:#3730A3">${fdDate(o.delivery_date)}</td></tr>`
+    : '';
+  const righe = items.map(i => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #eee">${i.name}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #eee;text-align:center">${i.qty} kg</td>
+      <td style="padding:10px 0;border-bottom:1px solid #eee;text-align:right">€ ${parseFloat(i.price).toFixed(2)}/kg</td>
+      <td style="padding:10px 0;border-bottom:1px solid #eee;text-align:right;font-weight:700">€ ${(i.qty*i.price).toFixed(2)}</td>
+    </tr>`).join('');
+
+  document.getElementById('print-area').innerHTML = `
+    <div style="max-width:600px;margin:0 auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #E8C84A">
+        <div>
+          <div style="font-size:22px;font-weight:800;color:#8B6E10">⭐ Le Delizie di Gio</div>
+          <div style="font-size:13px;color:#888;margin-top:4px">Ordine stampato il ${new Date().toLocaleString('it-IT')}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:700;color:#2C2C2A">#${o.order_code}</div>
+          <div style="font-size:12px;color:#888">Data ordine: ${fd(o.created_at, true)}</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:24px;background:#FBF3D0;border-radius:10px;padding:16px 20px">
+        <div style="font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Dati cliente</div>
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
+          <tr><td style="color:#888;padding:5px 0;width:40%">Cliente</td><td style="font-weight:700">${o.customer_name}</td></tr>
+          <tr><td style="color:#888;padding:5px 0">Telefono</td><td>${o.phone}</td></tr>
+          <tr><td style="color:#888;padding:5px 0">Email</td><td>${o.email}</td></tr>
+          ${deliveryRow}
+        </table>
+      </div>
+
+      <div style="font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Prodotti ordinati</div>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <thead>
+          <tr style="background:#F5E48A">
+            <th style="padding:10px 8px;text-align:left;font-size:12px;color:#8B6E10">Prodotto</th>
+            <th style="padding:10px 8px;text-align:center;font-size:12px;color:#8B6E10">Quantità</th>
+            <th style="padding:10px 8px;text-align:right;font-size:12px;color:#8B6E10">Prezzo/kg</th>
+            <th style="padding:10px 8px;text-align:right;font-size:12px;color:#8B6E10">Subtotale</th>
+          </tr>
+        </thead>
+        <tbody>${righe}</tbody>
+      </table>
+
+      <div style="margin-top:16px;padding:14px 16px;background:#E8C84A;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:15px;font-weight:700;color:#8B6E10">Totale stimato</span>
+        <span style="font-size:20px;font-weight:800;color:#8B6E10">€ ${totale.toFixed(2)}</span>
+      </div>
+
+      <div style="margin-top:28px;padding-top:16px;border-top:1px solid #eee;font-size:12px;color:#aaa;text-align:center">
+        Le Delizie di Gio — Grazie per il tuo ordine!
+      </div>
+    </div>`;
+
+  window.print();
+}
 
 /* ================================================================
    RENDER
 ================================================================ */
-function renderAll() { rDash(); rOrders(); rArchive(); rProds(); rBadges(); }
+function renderAll() { rDash(); rOrders(); rArchive(); rCatalog(); rBadges(); }
 
 function nav(p) {
   document.querySelectorAll('.pg').forEach(x => x.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(x => x.classList.remove('active'));
   document.getElementById('pg-' + p).classList.add('active');
   document.getElementById('nav-' + p).classList.add('active');
-  const T = { dashboard:'Dashboard', orders:'Ordini in attesa', archive:'Archivio ordini', products:'Gestione prodotti' };
-  document.getElementById('tb-title').textContent = T[p];
+  const T = { dashboard:'Dashboard', orders:'Ordini in attesa', archive:'Archivio ordini', products:'Aggiungi prodotto', catalog:'Catalogo prodotti' };
+  document.getElementById('tb-title').textContent = T[p] || p;
   renderAll();
 }
 
 function rBadges() {
   const n = orders.length;
-  document.getElementById('obadge').textContent   = n > 0 ? n : '';
-  document.getElementById('pcbadge').textContent  = n > 0 ? n + ' in attesa' : '';
+  document.getElementById('obadge').textContent  = n > 0 ? n : '';
+  document.getElementById('pcbadge').textContent = n > 0 ? n + ' in attesa' : '';
 }
 
 function rDash() {
@@ -463,7 +575,7 @@ function rDash() {
   document.getElementById('s1').textContent = orders.length + archive.length;
   document.getElementById('s2').textContent = products.length;
   document.getElementById('s3').textContent = archive.length;
-  const rl  = document.getElementById('rec-list');
+  const rl = document.getElementById('rec-list');
   const rec = orders.slice(0, 5);
   rl.innerHTML = rec.length
     ? rec.map(o => `<div class="ri"><div><strong>${o.customer_name}</strong> <span style="color:var(--muted);font-size:12px">${o.order_code}</span></div><span class="bdg bdg-p">${fd(o.created_at)}</span></div>`).join('')
@@ -482,14 +594,25 @@ function rDash() {
 function rOrders() {
   const el = document.getElementById('ord-wrap');
   if (!orders.length) { el.innerHTML = '<div class="es"><div class="es-icon">📋</div>Nessun ordine in attesa</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>Codice</th><th>Cliente</th><th>Telefono</th><th>Data</th><th>Articoli</th><th>Azioni</th></tr></thead><tbody>
+  el.innerHTML = `<table><thead><tr><th>Codice</th><th>Cliente</th><th>Telefono</th><th>Consegna richiesta</th><th>Data ordine</th><th>Articoli</th><th>Azioni</th></tr></thead><tbody>
     ${orders.map(o => {
       const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
+      const delivBadge = o.delivery_date
+        ? `<span class="delivery-badge">📅 ${fdDate(o.delivery_date)}</span>`
+        : `<span style="color:var(--muted);font-size:12px">—</span>`;
       return `<tr class="or" onclick="openOrd('${o.id}')">
         <td><code style="font-size:11px;color:var(--muted)">${o.order_code}</code></td>
-        <td><strong>${o.customer_name}</strong></td><td>${o.phone}</td><td>${fd(o.created_at)}</td>
+        <td><strong>${o.customer_name}</strong></td>
+        <td>${o.phone}</td>
+        <td>${delivBadge}</td>
+        <td>${fd(o.created_at)}</td>
         <td>${items.length} art.</td>
-        <td onclick="event.stopPropagation()"><button class="btn btn-s btn-ok" onclick="archOrd('${o.id}')">✓ Completa</button></td>
+        <td onclick="event.stopPropagation()">
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-s btn-print" onclick="openOrd('${o.id}');setTimeout(printOrder,100)">🖨</button>
+            <button class="btn btn-s btn-ok" onclick="archOrd('${o.id}')">✓ Completa</button>
+          </div>
+        </td>
       </tr>`;
     }).join('')}</tbody></table>`;
 }
@@ -497,34 +620,51 @@ function rOrders() {
 function rArchive() {
   const el = document.getElementById('arc-wrap');
   if (!archive.length) { el.innerHTML = '<div class="es"><div class="es-icon">📦</div>Nessun ordine archiviato</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>Codice</th><th>Cliente</th><th>Email</th><th>Data ordine</th><th>Archiviato il</th><th>Articoli</th><th>Azioni</th></tr></thead><tbody>
+  el.innerHTML = `<table><thead><tr><th>Codice</th><th>Cliente</th><th>Email</th><th>Consegna richiesta</th><th>Data ordine</th><th>Archiviato il</th><th>Articoli</th><th>Azioni</th></tr></thead><tbody>
     ${archive.map(o => {
       const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
-      return `<tr class="or" onclick="openOrd('${o.id}', true)">
+      const delivBadge = o.delivery_date
+        ? `<span class="delivery-badge">📅 ${fdDate(o.delivery_date)}</span>`
+        : `<span style="color:var(--muted);font-size:12px">—</span>`;
+      return `<tr class="or" onclick="openOrd('${o.id}',true)">
         <td><code style="font-size:11px;color:var(--muted)">${o.order_code}</code></td>
         <td><strong>${o.customer_name}</strong></td><td>${o.email}</td>
+        <td>${delivBadge}</td>
         <td>${fd(o.created_at)}</td><td>${fd(o.archived_at)}</td>
         <td>${items.length} art.</td>
-        <td onclick="event.stopPropagation()"><button class="btn btn-s btn-d" onclick="restOrd('${o.id}')">↩ Ripristina</button></td>
+        <td onclick="event.stopPropagation()">
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-s btn-print" onclick="openOrd('${o.id}',true);setTimeout(printOrder,100)">🖨</button>
+            <button class="btn btn-s btn-d" onclick="restOrd('${o.id}')">↩ Ripristina</button>
+          </div>
+        </td>
       </tr>`;
     }).join('')}</tbody></table>`;
 }
 
-function rProds() {
-  const el = document.getElementById('prod-wrap');
-  if (!products.length) { el.innerHTML = '<div class="es"><div class="es-icon">📦</div>Nessun prodotto ancora</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>Img</th><th>Nome</th><th>Descrizione</th><th>Prezzo/kg</th><th>Azioni</th></tr></thead><tbody>
-    ${products.map(p => `
-    <tr>
-      <td><div class="pimg-cell">${p.image_url ? `<img src="${p.image_url}" style="width:44px;height:44px;object-fit:cover;border-radius:8px">` : '🖼'}</div></td>
-      <td><strong>${p.name}</strong></td>
-      <td style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.description||''}</td>
-      <td style="font-weight:600;color:var(--pasta-deep)">€ ${parseFloat(p.price).toFixed(2)}/kg</td>
-      <td style="display:flex;gap:6px;align-items:center">
-        <button class="btn btn-s" onclick="editProd('${p.id}')">✏ Modifica</button>
-        <button class="btn btn-s btn-d" onclick="delProd('${p.id}')">🗑</button>
-      </td>
-    </tr>`).join('')}</tbody></table>`;
+function rCatalog() {
+  const el = document.getElementById('cat-grid-wrap');
+  const countEl = document.getElementById('cat-count');
+  if (!el) return;
+  if (!products.length) {
+    el.innerHTML = '<div class="es"><div class="es-icon">📦</div>Nessun prodotto ancora.<br><button class="btn btn-p" style="margin-top:14px" onclick="nav(\'products\')">+ Aggiungi il primo prodotto</button></div>';
+    if (countEl) countEl.textContent = '';
+    return;
+  }
+  if (countEl) countEl.textContent = products.length + ' prodott' + (products.length === 1 ? 'o' : 'i');
+  el.innerHTML = `<div class="cat-grid">${products.map(p => `
+    <div class="cat-card">
+      <div class="cat-img">${p.image_url ? `<img src="${p.image_url}" alt="${p.name}" onerror="this.parentNode.innerHTML='🥗'">` : '🥗'}</div>
+      <div class="cat-body">
+        <p class="cat-name" title="${p.name}">${p.name}</p>
+        <p class="cat-desc">${p.description || '<em style="color:var(--muted)">Nessuna descrizione</em>'}</p>
+        <p class="cat-price">€ ${parseFloat(p.price).toFixed(2)}<span style="font-size:12px;font-weight:400;color:var(--muted)">/kg</span></p>
+        <div class="cat-actions">
+          <button class="edit-card-btn" onclick="goEditProd('${p.id}')">✏ Modifica</button>
+          <button class="del-card-btn" onclick="delProd('${p.id}')">🗑 Elimina</button>
+        </div>
+      </div>
+    </div>`).join('')}</div>`;
 }
 
 /* ================================================================
@@ -534,6 +674,11 @@ function fd(iso, full = false) {
   if (!iso) return '-';
   const d = new Date(iso);
   return full ? d.toLocaleString('it-IT') : d.toLocaleDateString('it-IT');
+}
+function fdDate(dateStr) {
+  if (!dateStr) return '-';
+  const [y,m,d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
 }
 function toast(msg) {
   const t = document.getElementById('toast');
@@ -546,12 +691,7 @@ function refresh() {
   toast('Dati aggiornati');
 }
 document.getElementById('modal').addEventListener('click', function(e) { if (e.target === this) closeMod(); });
-
-// Mostra banner se non configurato
-if (SUPABASE_URL.includes('TUO-PROGETTO')) {
-  document.getElementById('cfg-banner').classList.add('show');
-}
-
+if (SUPABASE_URL.includes('TUO-PROGETTO')) document.getElementById('cfg-banner').classList.add('show');
 load();
 setInterval(load, 20000);
 </script>
