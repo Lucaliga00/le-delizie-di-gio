@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Le Delizie di Gio</title>
+
+<!-- PWA / icona schermata home -->
+<meta name="application-name" content="Le Delizie di Gio">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Delizie di Gio">
+<meta name="theme-color" content="#E8C84A">
+<link rel="apple-touch-icon" id="apple-icon" href="">
+<link rel="icon" type="image/png" id="favicon" href="">
+<!-- Open Graph (anteprima link) -->
+<meta property="og:title" content="Le Delizie di Gio">
+<meta property="og:description" content="Prodotti freschi e genuini, ordina online">
+<meta property="og:image" id="og-image" content="">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -90,7 +103,10 @@
 <body>
 
 <header class="header">
-  <div class="logo" onclick="showPg('catalog')">⭐ <span>Le Delizie</span> di Gio</div>
+  <div class="logo" onclick="showPg('catalog')" style="display:flex;align-items:center;gap:10px">
+    <div id="header-logo-img" style="width:38px;height:38px;border-radius:50%;background:var(--pasta-mid);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;flex-shrink:0;border:2px solid var(--pasta-dark)">🏪</div>
+    <div><div style="font-size:16px;font-weight:700;color:var(--text)">⭐ <span style="color:var(--pasta-deep)">Le Delizie</span> di Gio</div><div style="font-size:11px;color:var(--muted);font-weight:400">Ordina online</div></div>
+  </div>
   <nav class="nav">
     <button class="nb active" id="nav-catalog" onclick="showPg('catalog')">🧺 Catalogo</button>
     <button class="nb" id="nav-cart" onclick="showPg('cart')">
@@ -139,7 +155,7 @@
 
         <!-- BOX DATA CONSEGNA -->
         <div class="date-box">
-          <div class="date-box-title">📅 Data di ritiro preferita</div>
+          <div class="date-box-title">📅 Data di consegna preferita</div>
           <div class="date-box-note">
             Indica una data in cui vorresti ricevere il tuo ordine.<br>
             <strong>Riceverai un messaggio di conferma o di proposta di modifica della data.</strong>
@@ -202,6 +218,17 @@ async function sbInsert(table, data) {
   return res.json();
 }
 
+function applyShopImage(url) {
+  if (!url) return;
+  // Header
+  const hdr = document.getElementById('header-logo-img');
+  if (hdr) hdr.innerHTML = `<img src="${url}" style="width:38px;height:38px;object-fit:cover;border-radius:50%">`;
+  // Icona schermata home (apple touch icon e favicon dinamici)
+  document.getElementById('apple-icon').href = url;
+  document.getElementById('favicon').href    = url;
+  document.getElementById('og-image').content = url;
+}
+
 /* ================================================================
    STATO
 ================================================================ */
@@ -218,8 +245,15 @@ async function loadProducts() {
   document.getElementById('loading').style.display = 'flex';
   document.getElementById('pgrid').style.display   = 'none';
   document.getElementById('cat-empty').style.display = 'none';
-  try { products = await sbSelect('products', 'order=name.asc'); }
-  catch(e) { products = []; }
+  try {
+    const [p, s] = await Promise.all([
+      sbSelect('products', 'order=name.asc'),
+      sbSelect('settings')
+    ]);
+    products = p;
+    const imgSetting = Array.isArray(s) ? s.find(x => x.key === 'shop_image') : null;
+    if (imgSetting && imgSetting.value) applyShopImage(imgSetting.value);
+  } catch(e) { products = []; }
   renderCat();
 }
 

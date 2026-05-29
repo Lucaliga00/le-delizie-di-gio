@@ -19,6 +19,14 @@
   .logo { padding:20px; background:var(--pasta); }
   .logo-name { font-size:16px; font-weight:700; color:var(--pasta-deep); }
   .logo-sub { font-size:11px; color:var(--pasta-dark); margin-top:3px; }
+  .logo-img-wrap { margin-top:14px; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .logo-img { width:90px; height:90px; border-radius:50%; object-fit:cover; border:3px solid var(--pasta-dark); background:var(--pasta-mid); display:flex; align-items:center; justify-content:center; font-size:36px; overflow:hidden; }
+  .logo-img img { width:90px; height:90px; object-fit:cover; border-radius:50%; }
+  .logo-img-btn { font-size:11px; color:var(--pasta-deep); background:var(--white); border:1px solid var(--pasta-dark); border-radius:20px; padding:3px 12px; cursor:pointer; font-family:inherit; font-weight:600; transition:all .15s; }
+  .logo-img-btn:hover { background:var(--pasta-dark); color:var(--white); }
+  .logo-img-input { display:none; }
+  .logo-img-prog { width:90px; height:3px; border-radius:2px; background:var(--pasta-mid); margin-top:4px; display:none; overflow:hidden; }
+  .logo-img-prog-fill { height:100%; background:var(--pasta-dark); border-radius:2px; transition:width .3s; width:0%; }
   .nav { padding:12px 0; flex:1; }
   .ni { display:flex; align-items:center; gap:10px; padding:11px 20px; font-size:14px; color:var(--muted); cursor:pointer; border-left:3px solid transparent; transition:all .15s; }
   .ni:hover { background:var(--pasta-light); color:var(--text); }
@@ -142,6 +150,12 @@
     <div class="logo">
       <div class="logo-name">⭐ Le Delizie di Gio</div>
       <div class="logo-sub">Pannello di gestione</div>
+      <div class="logo-img-wrap">
+        <div class="logo-img" id="sidebar-logo-img">🏪</div>
+        <input type="file" class="logo-img-input" id="logo-file-input" accept="image/*" onchange="onLogoSelect(this.files[0])">
+        <button class="logo-img-btn" onclick="document.getElementById('logo-file-input').click()">📷 Cambia foto</button>
+        <div class="logo-img-prog" id="logo-prog"><div class="logo-img-prog-fill" id="logo-prog-fill"></div></div>
+      </div>
     </div>
     <nav class="nav">
       <div class="ni active" onclick="nav('dashboard')" id="nav-dashboard">
@@ -319,19 +333,31 @@ async function sbUploadImage(file) {
 let products = [], orders = [], archive = [];
 let editId = null, currentImageUrl = '';
 let currentOrderForPrint = null;
+let shopImageUrl = '';
 
 /* ================================================================
    CARICAMENTO
 ================================================================ */
 async function load() {
   try {
-    [products, orders, archive] = await Promise.all([
+    const [p, o, a, s] = await Promise.all([
       sbSelect('products'),
       sbSelect('orders', 'archived=eq.false'),
-      sbSelect('orders', 'archived=eq.true')
+      sbSelect('orders', 'archived=eq.true'),
+      sbSelect('settings')
     ]);
+    products = p; orders = o; archive = a;
+    const imgSetting = Array.isArray(s) ? s.find(x => x.key === 'shop_image') : null;
+    shopImageUrl = imgSetting ? imgSetting.value : '';
+    applyShopImage(shopImageUrl);
   } catch(e) { console.error(e); products=[]; orders=[]; archive=[]; }
   renderAll();
+}
+
+function applyShopImage(url) {
+  const el = document.getElementById('sidebar-logo-img');
+  if (!el) return;
+  el.innerHTML = url ? `<img src="${url}" alt="Logo negozio">` : '🏪';
 }
 
 /* ================================================================
@@ -370,9 +396,35 @@ async function onFileSelect(file) {
   }
 }
 
-/* ================================================================
-   PRODOTTI
-================================================================ */
+async function onLogoSelect(file) {
+  if (!file) return;
+  if (file.size > 5*1024*1024) { toast('⚠ Immagine troppo grande (max 5 MB)'); return; }
+  const prog = document.getElementById('logo-prog');
+  const fill = document.getElementById('logo-prog-fill');
+  prog.style.display = 'block'; fill.style.width = '30%';
+  // Anteprima immediata
+  const reader = new FileReader();
+  reader.onload = e => applyShopImage(e.target.result);
+  reader.readAsDataURL(file);
+  try {
+    const url = await sbUploadImage(file);
+    fill.style.width = '100%';
+    setTimeout(() => { prog.style.display = 'none'; fill.style.width = '0'; }, 600);
+    shopImageUrl = url;
+    applyShopImage(url);
+    // Salva in Supabase settings
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/settings?key=eq.shop_image`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ value: url })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    toast('Immagine negozio salvata ✓');
+  } catch(err) {
+    prog.style.display = 'none';
+    toast('⚠ Errore nel caricamento immagine'); console.error(err);
+  }
+}
 async function saveProd() {
   const name = document.getElementById('p-name').value.trim();
   const price = document.getElementById('p-price').value.trim();
