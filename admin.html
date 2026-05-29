@@ -107,6 +107,18 @@
   .bdg-p { background:var(--pasta-mid); color:var(--pasta-deep); }
   .bdg-ok { background:#EAF3DE; color:#3B6D11; }
   .twocol { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  /* Grafico incassi */
+  .chart-container { position:relative; width:100%; }
+  .chart-svg-wrap { width:100%; overflow:visible; }
+  .chart-bar-group { cursor:pointer; }
+  .chart-bar-group:hover .chart-bar-rect { opacity:.85; }
+  .chart-tooltip { position:absolute; background:#2C2C2A; color:#fff; font-size:12px; font-weight:600; padding:6px 12px; border-radius:8px; pointer-events:none; white-space:nowrap; transform:translate(-50%,-110%); display:none; z-index:10; }
+  .chart-tooltip::after { content:''; position:absolute; bottom:-5px; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color:#2C2C2A; border-bottom:none; }
+  .period-tabs { display:flex; gap:4px; background:var(--off); padding:3px; border-radius:8px; width:fit-content; margin-bottom:14px; }
+  .period-tab { padding:4px 14px; font-size:12px; font-weight:600; border-radius:6px; cursor:pointer; border:none; font-family:inherit; color:var(--muted); background:none; transition:all .15s; }
+  .period-tab.active { background:var(--white); color:var(--pasta-deep); border:1px solid var(--pasta-mid); }
+  .incasso-total { font-size:26px; font-weight:800; color:var(--pasta-deep); }
+  .incasso-label { font-size:12px; color:var(--muted); margin-top:4px; }
   .spinner { display:inline-block; width:16px; height:16px; border:2px solid var(--pasta-mid); border-top-color:var(--pasta-deep); border-radius:50%; animation:spin .7s linear infinite; }
   @keyframes spin { to { transform:rotate(360deg); } }
   .config-banner { background:var(--pasta-light); border:1px solid var(--pasta-dark); border-radius:10px; padding:16px 20px; margin-bottom:20px; font-size:13px; color:var(--pasta-deep); display:none; }
@@ -187,10 +199,30 @@
           <div class="sc"><div class="sl">Ordini totali</div><div class="sv" id="s1">0</div><div class="ss">tutti i tempi</div></div>
           <div class="sc"><div class="sl">Prodotti attivi</div><div class="sv" id="s2">0</div><div class="ss">nel catalogo</div></div>
           <div class="sc"><div class="sl">Archiviati</div><div class="sv" id="s3">0</div><div class="ss">completati</div></div>
+          <div class="sc" style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div><div class="sl">Incasso totale (ordini completati)</div><div class="incasso-total" id="s-incasso-total">€ 0.00</div></div>
+            <div style="text-align:right"><div class="sl">Questo mese</div><div style="font-size:20px;font-weight:700;color:var(--text)" id="s-incasso-mese">€ 0.00</div></div>
+            <div style="text-align:right"><div class="sl">Questo anno</div><div style="font-size:20px;font-weight:700;color:var(--text)" id="s-incasso-anno">€ 0.00</div></div>
+          </div>
         </div>
         <div class="twocol">
           <div class="card"><div class="ch"><span class="ct">Ordini recenti</span><button class="btn btn-s" onclick="nav('orders')">Vedi tutti</button></div><div id="rec-list"><div class="es">Nessun ordine ancora</div></div></div>
-          <div class="card"><div class="ch"><span class="ct">Ultimi 7 giorni</span></div><div class="bwrap" id="bars"></div></div>
+          <div class="card"><div class="ch"><span class="ct">Ordini — ultimi 7 giorni</span></div><div class="bwrap" id="bars"></div></div>
+        </div>
+        <!-- GRAFICO INCASSI -->
+        <div class="card">
+          <div class="ch">
+            <span class="ct">📊 Incassi ordini completati</span>
+            <div class="period-tabs">
+              <button class="period-tab active" id="ptab-30" onclick="setPeriod(30)">30 giorni</button>
+              <button class="period-tab" id="ptab-90" onclick="setPeriod(90)">3 mesi</button>
+              <button class="period-tab" id="ptab-365" onclick="setPeriod(365)">12 mesi</button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <div class="chart-tooltip" id="chart-tooltip"></div>
+            <div id="incasso-chart"></div>
+          </div>
         </div>
       </div>
 
@@ -496,7 +528,7 @@ function openOrd(id, fromArc = false) {
     `<div class="dr"><span class="dl">${i.name}</span><span>${i.qty} kg × €${parseFloat(i.price).toFixed(2)} = <strong>€${(i.qty*i.price).toFixed(2)}</strong></span></div>`
   ).join('');
   const deliveryHtml = o.delivery_date
-    ? `<div class="dr"><span class="dl">📅 Data consegna richiesta</span><span class="delivery-badge">📅 ${fdDate(o.delivery_date)}</span></div>`
+    ? `<div class="dr"><span class="dl">📅 Data ritiro richiesto</span><span class="delivery-badge">📅 ${fdDate(o.delivery_date)}</span></div>`
     : '';
   document.getElementById('m-title').textContent = 'Ordine #' + o.order_code;
   document.getElementById('m-body').innerHTML = `
@@ -508,7 +540,8 @@ function openOrd(id, fromArc = false) {
     <div class="dr"><span class="dl">Email</span><span>${o.email}</span></div>
     <div style="margin:14px 0 6px;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px">PRODOTTI ORDINATI</div>
     ${iH}
-    <div class="dr" style="margin-top:4px"><span class="dl" style="font-weight:700">Totale stimato</span><strong style="color:var(--pasta-deep)">€ ${totale.toFixed(2)}</strong></div>`;
+    <div class="dr" style="margin-top:4px"><span class="dl" style="font-weight:700">Totale stimato</span><strong style="color:var(--pasta-deep)">€ ${totale.toFixed(2)}</strong></div>
+    ${o.notes ? `<div style="margin-top:14px;background:var(--pasta-light);border:1px solid var(--pasta-mid);border-radius:10px;padding:12px 16px"><div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:6px">📝 ANNOTAZIONI</div><div style="font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap">${o.notes}</div></div>` : ''}`;
   document.getElementById('m-act').innerHTML = fromArc
     ? `<button class="btn" onclick="restOrd('${id}');closeMod()">↩ Ripristina</button>`
     : `<button class="btn btn-p" onclick="archOrd('${id}');closeMod()">✓ Segna come completato</button>`;
@@ -531,7 +564,7 @@ function printOrder() {
     ? `<img src="${shopImageUrl}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #E8C84A;margin-right:16px">`
     : `<div style="width:64px;height:64px;border-radius:50%;background:#F5E48A;display:flex;align-items:center;justify-content:center;font-size:32px;margin-right:16px">🏪</div>`;
   const deliveryRow = o.delivery_date
-    ? `<tr><td style="color:#888;padding:6px 0;width:40%">📅 Consegna richiesta</td><td style="font-weight:700;color:#3730A3">${fdDate(o.delivery_date)}</td></tr>`
+    ? `<tr><td style="color:#888;padding:6px 0;width:40%">📅 Ritiro richiesto</td><td style="font-weight:700;color:#3730A3">${fdDate(o.delivery_date)}</td></tr>`
     : '';
   const righe = items.map(i => `
     <tr>
@@ -576,6 +609,7 @@ function printOrder() {
         <tr><td style="color:#888;padding:5px 0">Telefono</td><td>${o.phone}</td></tr>
         <tr><td style="color:#888;padding:5px 0">Email</td><td>${o.email}</td></tr>
         ${deliveryRow}
+        ${o.notes ? `<tr><td style="color:#888;padding:6px 0;width:40%;vertical-align:top">📝 Annotazioni</td><td style="font-weight:600;line-height:1.6;white-space:pre-wrap">${o.notes}</td></tr>` : ''}
       </table>
     </div>
 
@@ -632,17 +666,47 @@ function rBadges() {
   document.getElementById('pcbadge').textContent = n > 0 ? n + ' in attesa' : '';
 }
 
+let chartPeriod = 30;
+
+function setPeriod(days) {
+  chartPeriod = days;
+  [30,90,365].forEach(d => {
+    const el = document.getElementById('ptab-' + d);
+    if (el) el.classList.toggle('active', d === days);
+  });
+  rIncassiChart();
+}
+
+function ordineTotal(o) {
+  const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
+  return items.reduce((s, i) => s + (i.qty * i.price), 0);
+}
+
 function rDash() {
   const td = new Date().toDateString();
   document.getElementById('s0').textContent = orders.filter(o => new Date(o.created_at).toDateString() === td).length;
   document.getElementById('s1').textContent = orders.length + archive.length;
   document.getElementById('s2').textContent = products.length;
   document.getElementById('s3').textContent = archive.length;
+
+  // Incassi stats
+  const now = new Date();
+  const meseCor = now.getMonth(), annoCor = now.getFullYear();
+  const incassoTotale = archive.reduce((s, o) => s + ordineTotal(o), 0);
+  const incassoMese   = archive.filter(o => { const d = new Date(o.archived_at||o.created_at); return d.getMonth()===meseCor && d.getFullYear()===annoCor; }).reduce((s,o)=>s+ordineTotal(o),0);
+  const incassoAnno   = archive.filter(o => new Date(o.archived_at||o.created_at).getFullYear()===annoCor).reduce((s,o)=>s+ordineTotal(o),0);
+  document.getElementById('s-incasso-total').textContent = '€ ' + incassoTotale.toFixed(2);
+  document.getElementById('s-incasso-mese').textContent  = '€ ' + incassoMese.toFixed(2);
+  document.getElementById('s-incasso-anno').textContent  = '€ ' + incassoAnno.toFixed(2);
+
+  // Ordini recenti
   const rl = document.getElementById('rec-list');
   const rec = orders.slice(0, 5);
   rl.innerHTML = rec.length
     ? rec.map(o => `<div class="ri"><div><strong>${o.customer_name}</strong> <span style="color:var(--muted);font-size:12px">${o.order_code}</span></div><span class="bdg bdg-p">${fd(o.created_at)}</span></div>`).join('')
     : '<div class="es">Nessun ordine ancora</div>';
+
+  // Barre ordini 7 giorni
   const all = [...orders, ...archive], days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(); d.setDate(d.getDate() - i);
@@ -652,12 +716,128 @@ function rDash() {
   document.getElementById('bars').innerHTML = days.map(d =>
     `<div class="bc"><span style="font-size:11px;font-weight:600;color:var(--text)">${d.c||''}</span><div class="bf" style="height:${Math.max(d.c/mx*82,4)}px"></div><span class="bl">${d.l}</span></div>`
   ).join('');
+
+  rIncassiChart();
+}
+
+function rIncassiChart() {
+  const el = document.getElementById('incasso-chart');
+  if (!el) return;
+  const oggi = new Date();
+  const buckets = [];
+  let labelFn, groupFn;
+
+  if (chartPeriod === 30) {
+    // Ultimi 30 giorni — un bucket per giorno
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(oggi); d.setDate(d.getDate() - i);
+      buckets.push({ label: d.getDate() + '/' + (d.getMonth()+1), date: d.toDateString(), val: 0 });
+    }
+    archive.forEach(o => {
+      const ds = new Date(o.archived_at || o.created_at).toDateString();
+      const b = buckets.find(b => b.date === ds);
+      if (b) b.val += ordineTotal(o);
+    });
+  } else if (chartPeriod === 90) {
+    // Ultimi 3 mesi — un bucket per settimana
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(oggi); d.setDate(d.getDate() - i*7);
+      const wStart = new Date(d); wStart.setDate(d.getDate() - d.getDay());
+      buckets.push({ label: wStart.getDate() + '/' + (wStart.getMonth()+1), weekStart: wStart, val: 0 });
+    }
+    archive.forEach(o => {
+      const od = new Date(o.archived_at || o.created_at);
+      const ws = new Date(od); ws.setDate(od.getDate() - od.getDay());
+      const b = buckets.find(b => b.weekStart.toDateString() === ws.toDateString());
+      if (b) b.val += ordineTotal(o);
+    });
+  } else {
+    // Ultimi 12 mesi — un bucket per mese
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(oggi.getFullYear(), oggi.getMonth() - i, 1);
+      const mesi = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+      buckets.push({ label: mesi[d.getMonth()], month: d.getMonth(), year: d.getFullYear(), val: 0 });
+    }
+    archive.forEach(o => {
+      const od = new Date(o.archived_at || o.created_at);
+      const b = buckets.find(b => b.month === od.getMonth() && b.year === od.getFullYear());
+      if (b) b.val += ordineTotal(o);
+    });
+  }
+
+  const maxVal = Math.max(...buckets.map(b => b.val), 1);
+  const W = 600, H = 180, padL = 52, padR = 10, padT = 20, padB = 36;
+  const bw = (W - padL - padR) / buckets.length;
+  const gap = Math.max(2, bw * 0.18);
+
+  // Y axis labels
+  const ySteps = 4;
+  let yLines = '';
+  for (let i = 0; i <= ySteps; i++) {
+    const y = padT + (H - padT - padB) * (1 - i/ySteps);
+    const val = maxVal * i / ySteps;
+    const label = val >= 1000 ? '€' + (val/1000).toFixed(1) + 'k' : '€' + val.toFixed(0);
+    yLines += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(44,44,42,0.07)" stroke-width="1"/>`;
+    yLines += `<text x="${padL - 6}" y="${y + 4}" text-anchor="end" font-size="10" fill="#888780" font-family="system-ui">${label}</text>`;
+  }
+
+  // Bars
+  let bars = '';
+  buckets.forEach((b, i) => {
+    const barH = Math.max((b.val / maxVal) * (H - padT - padB), b.val > 0 ? 3 : 0);
+    const x = padL + i * bw + gap/2;
+    const y = padT + (H - padT - padB) - barH;
+    const w = bw - gap;
+    const tip = '€ ' + b.val.toFixed(2);
+    const cx = x + w/2;
+    bars += `<g class="chart-bar-group" onmouseenter="showTip(event,'${tip}',${cx})" onmouseleave="hideTip()">`;
+    if (b.val > 0) {
+      bars += `<rect class="chart-bar-rect" x="${x}" y="${y}" width="${w}" height="${barH}" rx="3" fill="#E8C84A"/>`;
+    } else {
+      bars += `<rect x="${x}" y="${H - padB - 2}" width="${w}" height="2" rx="1" fill="rgba(44,44,42,0.08)"/>`;
+    }
+    bars += `<rect x="${x}" y="${padT}" width="${w}" height="${H - padT - padB}" fill="transparent"/>`;
+    bars += `</g>`;
+    // x label — show every N labels to avoid overlap
+    const every = chartPeriod === 30 ? 5 : 1;
+    if (i % every === 0 || i === buckets.length - 1) {
+      bars += `<text x="${cx}" y="${H - padB + 14}" text-anchor="middle" font-size="10" fill="#888780" font-family="system-ui">${b.label}</text>`;
+    }
+  });
+
+  el.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" class="chart-svg-wrap" style="display:block;width:100%;height:auto">
+      ${yLines}
+      <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H - padB}" stroke="rgba(44,44,42,0.12)" stroke-width="1"/>
+      ${bars}
+    </svg>`;
+
+  if (archive.length === 0) {
+    el.innerHTML = '<div class="es" style="padding:32px">Nessun ordine completato ancora</div>';
+  }
+}
+
+function showTip(e, text, cx) {
+  const tip = document.getElementById('chart-tooltip');
+  const wrap = document.getElementById('incasso-chart');
+  if (!tip || !wrap) return;
+  const rect = wrap.getBoundingClientRect();
+  const svgW = rect.width;
+  const scale = svgW / 600;
+  tip.textContent = text;
+  tip.style.display = 'block';
+  tip.style.left = (cx * scale + 52 * scale) + 'px';
+  tip.style.top = '10px';
+}
+function hideTip() {
+  const tip = document.getElementById('chart-tooltip');
+  if (tip) tip.style.display = 'none';
 }
 
 function rOrders() {
   const el = document.getElementById('ord-wrap');
   if (!orders.length) { el.innerHTML = '<div class="es"><div class="es-icon">📋</div>Nessun ordine in attesa</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>Codice</th><th>Cliente</th><th>Telefono</th><th>Consegna richiesta</th><th>Data ordine</th><th>Articoli</th><th>Azioni</th></tr></thead><tbody>
+  el.innerHTML = `<table><thead><tr><th>Codice</th><th>Cliente</th><th>Telefono</th><th>Ritiro richiesto</th><th>Data ordine</th><th>Articoli</th><th>Azioni</th></tr></thead><tbody>
     ${orders.map(o => {
       const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
       const delivBadge = o.delivery_date
@@ -683,7 +863,7 @@ function rOrders() {
 function rArchive() {
   const el = document.getElementById('arc-wrap');
   if (!archive.length) { el.innerHTML = '<div class="es"><div class="es-icon">📦</div>Nessun ordine archiviato</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>Codice</th><th>Cliente</th><th>Email</th><th>Consegna richiesta</th><th>Data ordine</th><th>Archiviato il</th><th>Articoli</th><th>Azioni</th></tr></thead><tbody>
+  el.innerHTML = `<table><thead><tr><th>Codice</th><th>Cliente</th><th>Email</th><th>Ritiro richiesto</th><th>Data ordine</th><th>Archiviato il</th><th>Articoli</th><th>Azioni</th></tr></thead><tbody>
     ${archive.map(o => {
       const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
       const delivBadge = o.delivery_date
