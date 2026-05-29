@@ -83,6 +83,10 @@
   .date-box-title { font-size:14px; font-weight:700; color:var(--pasta-deep); margin-bottom:6px; display:flex; align-items:center; gap:8px; }
   .date-box-note { font-size:12px; color:var(--pasta-dark); margin-bottom:14px; line-height:1.5; background:var(--white); border-radius:8px; padding:10px 14px; border:1px solid var(--pasta-mid); }
   .date-box-note strong { color:var(--pasta-deep); }
+  .notes-box { background:var(--white); border:1px solid var(--bds); border-radius:12px; padding:18px 20px; margin-bottom:18px; }
+  .notes-box-title { font-size:14px; font-weight:700; color:var(--text); margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+  .notes-textarea { width:100%; font-family:inherit; font-size:14px; border:1px solid var(--bds); border-radius:9px; padding:10px 14px; background:var(--off); color:var(--text); outline:none; resize:vertical; min-height:90px; line-height:1.6; }
+  .notes-textarea:focus { border-color:var(--pasta-dark); box-shadow:0 0 0 3px var(--pasta-mid); background:var(--white); }
 
   .sbtn { width:100%; padding:14px; background:var(--pasta); color:var(--pasta-deep); border:none; border-radius:10px; font-size:15px; font-family:inherit; font-weight:700; cursor:pointer; margin-top:18px; transition:background .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
   .sbtn:hover { background:var(--pasta-dark); color:var(--white); }
@@ -164,6 +168,11 @@
             <label class="flbl">Data preferita (opzionale)</label>
             <input type="date" id="c-date" min="" />
           </div>
+        </div>
+
+        <div class="notes-box">
+          <div class="notes-box-title">📝 Annotazioni</div>
+          <textarea class="notes-textarea" id="c-notes" placeholder="Es. citofono rotto, lasciare al piano terra — allergie — preferenze di taglio..."></textarea>
         </div>
 
         <button class="sbtn" id="sbtn" onclick="submitOrder()">📨 Invia ordine</button>
@@ -363,6 +372,7 @@ async function submitOrder() {
   const phone   = document.getElementById('c-phone').value.trim();
   const email   = document.getElementById('c-email').value.trim();
   const date    = document.getElementById('c-date').value;
+  const notes   = document.getElementById('c-notes').value.trim();
   if (!nome || !cognome || !phone || !email) { toast('⚠ Compila tutti i campi obbligatori'); return; }
   if (!email.includes('@')) { toast('⚠ Email non valida'); return; }
 
@@ -378,6 +388,7 @@ async function submitOrder() {
     items:          JSON.stringify(Object.values(cart).map(i => ({ id:i.id, name:i.name, price:i.price, qty:i.qty })))
   };
   if (date) orderData.delivery_date = date;
+  if (notes) orderData.notes = notes;
 
   try {
     await sbInsert('orders', orderData);
