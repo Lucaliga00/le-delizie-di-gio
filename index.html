@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Delizie di Gio</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --pasta:#E8C84A; --pasta-dark:#C9A830; --pasta-deep:#8B6E10;
+    --pasta-light:#FBF3D0; --pasta-mid:#F5E48A;
+    --white:#FFFFFF; --off:#FDFAF0;
+    --text:#2C2C2A; --muted:#888780;
+    --bd:rgba(44,44,42,0.12); --bds:rgba(44,44,42,0.22);
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--off); }
+  .header { background:var(--white); border-bottom:1px solid var(--bd); padding:0 28px; height:60px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:20; }
+  .logo { font-size:18px; font-weight:700; color:var(--text); cursor:pointer; }
+  .logo span { color:var(--pasta-deep); }
+  .nav { display:flex; align-items:center; gap:6px; }
+  .nb { display:flex; align-items:center; gap:7px; padding:8px 16px; border-radius:8px; font-size:14px; font-family:inherit; cursor:pointer; background:none; border:none; color:var(--muted); transition:all .15s; }
+  .nb:hover { background:var(--pasta-light); color:var(--text); }
+  .nb.active { background:var(--pasta-light); color:var(--pasta-deep); font-weight:600; }
+  .cc { background:var(--pasta); color:var(--pasta-deep); border-radius:50%; width:20px; height:20px; font-size:11px; display:none; align-items:center; justify-content:center; font-weight:700; }
+  .wrap { max-width:1100px; margin:0 auto; padding:28px 24px; }
+  .pg { display:none; } .pg.active { display:block; }
+  .hero { background:var(--pasta); border-radius:16px; padding:40px 36px; margin-bottom:28px; }
+  .hero h1 { font-size:28px; font-weight:700; color:var(--pasta-deep); margin-bottom:10px; }
+  .hero p { font-size:15px; color:var(--pasta-dark); max-width:500px; line-height:1.6; }
+  .sec-title { font-size:18px; font-weight:700; color:var(--text); margin-bottom:18px; }
+  .pgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:18px; }
+  .pcard { background:var(--white); border:1px solid var(--bd); border-radius:14px; overflow:hidden; transition:border-color .15s, transform .15s; }
+  .pcard:hover { border-color:var(--pasta-dark); transform:translateY(-2px); }
+  .pimg-wrap { width:100%; height:150px; background:var(--pasta-light); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:48px; }
+  .pimg-wrap img { width:100%; height:150px; object-fit:cover; }
+  .pbody { padding:14px; }
+  .pname { font-size:15px; font-weight:700; color:var(--text); margin-bottom:5px; }
+  .pdesc { font-size:12px; color:var(--muted); line-height:1.5; height:36px; overflow:hidden; margin-bottom:10px; }
+  .pprice { font-size:16px; font-weight:700; color:var(--pasta-deep); margin-bottom:12px; }
+  .qrow { display:flex; align-items:center; gap:8px; }
+  .qb { width:30px; height:30px; border-radius:8px; border:1px solid var(--bds); background:var(--off); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; font-family:inherit; transition:background .15s; }
+  .qb:hover { background:var(--pasta-mid); }
+  .qv { min-width:34px; text-align:center; font-size:14px; font-weight:600; }
+  .qu { font-size:12px; color:var(--muted); }
+  .addbtn { width:100%; margin-top:12px; padding:9px; border-radius:9px; background:var(--pasta); color:var(--pasta-deep); border:none; font-size:13px; font-family:inherit; cursor:pointer; font-weight:700; transition:background .15s; }
+  .addbtn:hover { background:var(--pasta-dark); color:var(--white); }
+  .addbtn.added { background:var(--pasta-deep); color:var(--white); }
+  .es { text-align:center; padding:60px 20px; color:var(--muted); font-size:15px; }
+  .es-icon { font-size:48px; display:block; margin-bottom:12px; }
+  .clist { display:flex; flex-direction:column; gap:12px; margin-bottom:22px; }
+  .ci { background:var(--white); border:1px solid var(--bd); border-radius:12px; padding:14px 18px; display:flex; align-items:center; gap:16px; }
+  .ciimg { width:56px; height:56px; border-radius:10px; background:var(--pasta-light); overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:28px; }
+  .ciimg img { width:56px; height:56px; object-fit:cover; }
+  .cin { font-size:15px; font-weight:700; margin-bottom:4px; }
+  .cip { font-size:12px; color:var(--muted); }
+  .ctot { background:var(--pasta-light); border-radius:12px; padding:18px 22px; margin-bottom:22px; border:1px solid var(--bd); }
+  .trow { display:flex; justify-content:space-between; font-size:14px; padding:4px 0; }
+  .trow.main { font-size:17px; font-weight:700; color:var(--pasta-deep); border-top:1px solid var(--bds); margin-top:10px; padding-top:14px; }
+  .cform { background:var(--white); border:1px solid var(--bd); border-radius:12px; padding:22px; }
+  .cform-title { font-size:15px; font-weight:700; color:var(--text); margin-bottom:18px; }
+  .frow { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+  .fgr { display:flex; flex-direction:column; gap:6px; }
+  .flbl { font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.4px; }
+  input { font-family:inherit; font-size:14px; border:1px solid var(--bds); border-radius:9px; padding:10px 14px; background:var(--white); color:var(--text); outline:none; width:100%; }
+  input:focus { border-color:var(--pasta-dark); box-shadow:0 0 0 3px var(--pasta-mid); }
+  .sbtn { width:100%; padding:14px; background:var(--pasta); color:var(--pasta-deep); border:none; border-radius:10px; font-size:15px; font-family:inherit; font-weight:700; cursor:pointer; margin-top:18px; transition:background .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .sbtn:hover { background:var(--pasta-dark); color:var(--white); }
+  .sbtn:disabled { background:var(--off); color:var(--muted); cursor:not-allowed; border:1px solid var(--bd); }
+  .succ { background:var(--white); border:1px solid var(--bd); border-radius:14px; padding:52px 32px; text-align:center; }
+  .succ-icon { width:72px; height:72px; border-radius:50%; background:var(--pasta); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:32px; }
+  .succ-id { font-family:monospace; font-size:14px; background:var(--pasta-light); padding:6px 16px; border-radius:8px; display:inline-block; margin:10px 0; color:var(--pasta-deep); font-weight:700; letter-spacing:1px; }
+  .spinner { width:22px; height:22px; border:2.5px solid var(--pasta-mid); border-top-color:var(--pasta-deep); border-radius:50%; animation:sp .8s linear infinite; }
+  @keyframes sp { to { transform:rotate(360deg); } }
+  .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); background:var(--pasta); color:var(--pasta-deep); font-weight:700; padding:12px 24px; border-radius:10px; font-size:13px; z-index:200; opacity:0; transition:opacity .3s; pointer-events:none; white-space:nowrap; }
+  .toast.show { opacity:1; }
+  .db { background:none; border:none; cursor:pointer; color:var(--muted); font-size:20px; padding:4px; border-radius:8px; transition:color .15s; }
+  .db:hover { color:#E24B4A; }
+  .loading { display:flex; align-items:center; justify-content:center; padding:80px; gap:14px; flex-direction:column; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo" onclick="showPg('catalog')">⭐ <span>Le Delizie</span> di Gio</div>
+  <nav class="nav">
+    <button class="nb active" id="nav-catalog" onclick="showPg('catalog')">🧺 Catalogo</button>
+    <button class="nb" id="nav-cart" onclick="showPg('cart')">
+      🛒 Carrello <span class="cc" id="cc">0</span>
+    </button>
+  </nav>
+</header>
+
+<div class="wrap">
+  <!-- CATALOGO -->
+  <div class="pg active" id="pg-catalog">
+    <div class="hero">
+      <h1>Benvenuto alle Delizie di Gio!</h1>
+      <p>Prodotti freschi e genuini, scelti con cura. Aggiungi al carrello e ordina comodamente da casa.</p>
+    </div>
+    <p class="sec-title">I nostri prodotti</p>
+    <div class="loading" id="loading"><div class="spinner"></div><span style="font-size:14px;color:var(--muted)">Caricamento catalogo...</span></div>
+    <div class="pgrid" id="pgrid" style="display:none"></div>
+    <div class="es" id="cat-empty" style="display:none"><span class="es-icon">🧺</span>Il catalogo è momentaneamente vuoto.<br>Torna presto!</div>
+  </div>
+
+  <!-- CARRELLO -->
+  <div class="pg" id="pg-cart">
+    <div class="es" id="cart-empty" style="display:none">
+      <span class="es-icon">🛒</span>Il carrello è vuoto.
+      <br><button class="nb" style="margin-top:14px;border:1px solid var(--bds)" onclick="showPg('catalog')">Vai al catalogo →</button>
+    </div>
+    <div id="cart-content" style="display:none">
+      <p class="sec-title">Il tuo carrello</p>
+      <div class="clist" id="clist"></div>
+      <div class="ctot">
+        <div class="trow"><span style="color:var(--muted)">Prodotti</span><span id="ci-count">0</span></div>
+        <div class="trow main"><span>Totale stimato</span><span id="ci-total">€ 0.00</span></div>
+      </div>
+      <div class="cform">
+        <p class="cform-title">👤 I tuoi dati per l'ordine</p>
+        <div class="frow">
+          <div class="fgr"><label class="flbl">Nome</label><input type="text" id="c-nome" placeholder="Mario"/></div>
+          <div class="fgr"><label class="flbl">Cognome</label><input type="text" id="c-cognome" placeholder="Rossi"/></div>
+        </div>
+        <div class="frow">
+          <div class="fgr"><label class="flbl">Telefono</label><input type="tel" id="c-phone" placeholder="+39 333 1234567"/></div>
+          <div class="fgr"><label class="flbl">Email</label><input type="email" id="c-email" placeholder="mario@esempio.it"/></div>
+        </div>
+        <button class="sbtn" id="sbtn" onclick="submitOrder()">📨 Invia ordine</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUCCESSO -->
+  <div class="pg" id="pg-success">
+    <div class="succ">
+      <div class="succ-icon">✓</div>
+      <h2 style="font-size:22px;font-weight:700;margin-bottom:10px">Ordine inviato!</h2>
+      <p style="font-size:15px;color:var(--muted);margin-bottom:14px">Il tuo ordine è stato ricevuto con successo.<br>Ti contatteremo presto per la conferma.</p>
+      <div class="succ-id" id="succ-id"></div>
+      <p style="font-size:13px;color:var(--muted);margin-top:8px" id="succ-date"></p>
+      <button class="sbtn" style="max-width:300px;margin:28px auto 0" onclick="backCat()">🧺 Torna al catalogo</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================================================================
+   CONFIGURAZIONE SUPABASE
+   Stessi valori del file admin.html
+================================================================ */
+const SUPABASE_URL      = 'https://smfwthpstbrgphfrcgvk.supabase.co/rest/v1/';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtZnd0aHBzdGJyZ3BoZnJjZ3ZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDgyMDQsImV4cCI6MjA5NTU4NDIwNH0.Ut5bbEnXrJJz-m-c5sQ4qWkGDwhS7DWRt_k9P7gwvUo';
+
+const headers = {
+  'apikey':        SUPABASE_ANON_KEY,
+  'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+  'Content-Type':  'application/json',
+  'Prefer':        'return=representation'
+};
+
+async function sbSelect(table, filter = '') {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`, { headers });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+async function sbInsert(table, data) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method:'POST', headers, body: JSON.stringify(data) });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+/* ================================================================
+   STATO
+================================================================ */
+let products = [], cart = {}, qtys = {};
+
+async function loadProducts() {
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('pgrid').style.display   = 'none';
+  document.getElementById('cat-empty').style.display = 'none';
+  try {
+    products = await sbSelect('products', 'order=name.asc');
+  } catch(e) { products = []; }
+  renderCat();
+}
+
+function renderCat() {
+  document.getElementById('loading').style.display = 'none';
+  const g = document.getElementById('pgrid');
+  if (!products.length) { document.getElementById('cat-empty').style.display = 'block'; return; }
+  g.style.display = 'grid';
+  g.innerHTML = products.map(p => {
+    const qty = qtys[p.id] || 0.5;
+    const inC = cart[p.id] !== undefined;
+    return `<div class="pcard">
+      <div class="pimg-wrap">${p.image_url ? `<img src="${p.image_url}" alt="${p.name}">` : '🥗'}</div>
+      <div class="pbody">
+        <p class="pname">${p.name}</p>
+        <p class="pdesc">${p.description||''}</p>
+        <p class="pprice">€ ${parseFloat(p.price).toFixed(2)}<span style="font-size:12px;font-weight:400;color:var(--muted)">/kg</span></p>
+        <div class="qrow">
+          <button class="qb" onclick="chQty('${p.id}',-0.5)">−</button>
+          <span class="qv" id="qty-${p.id}">${qty}</span>
+          <span class="qu">kg</span>
+          <button class="qb" onclick="chQty('${p.id}',0.5)">+</button>
+        </div>
+        <button class="addbtn ${inC?'added':''}" id="ab-${p.id}" onclick="addCart('${p.id}')">
+          ${inC ? '✓ Aggiunto' : '+ Aggiungi al carrello'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function chQty(id, d) {
+  qtys[id] = Math.round(Math.max(0.5, (qtys[id] || 0.5) + d) * 10) / 10;
+  const el = document.getElementById('qty-' + id); if (el) el.textContent = qtys[id];
+}
+
+function addCart(id) {
+  const p = products.find(x => x.id === id); if (!p) return;
+  cart[id] = { ...p, qty: qtys[id] || 0.5 };
+  renderCat(); updCC(); toast(p.name + ' aggiunto al carrello ✓');
+}
+
+function updCC() {
+  const n = Object.keys(cart).length;
+  const el = document.getElementById('cc');
+  el.textContent = n; el.style.display = n > 0 ? 'flex' : 'none';
+}
+
+function showPg(pg) {
+  document.querySelectorAll('.pg').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(x => x.classList.remove('active'));
+  document.getElementById('pg-' + pg).classList.add('active');
+  const nb = document.getElementById('nav-' + pg); if (nb) nb.classList.add('active');
+  if (pg === 'cart') renderCart();
+}
+
+function renderCart() {
+  const items = Object.values(cart);
+  const empty = document.getElementById('cart-empty');
+  const cont  = document.getElementById('cart-content');
+  if (!items.length) { empty.style.display = 'block'; cont.style.display = 'none'; return; }
+  empty.style.display = 'none'; cont.style.display = 'block';
+  document.getElementById('clist').innerHTML = items.map(it => `
+    <div class="ci">
+      <div class="ciimg">${it.image_url ? `<img src="${it.image_url}" alt="${it.name}">` : '🥗'}</div>
+      <div style="flex:1">
+        <p class="cin">${it.name}</p>
+        <p class="cip">€ ${parseFloat(it.price).toFixed(2)}/kg</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="qb" onclick="chCartQty('${it.id}',-0.5)">−</button>
+        <span style="min-width:44px;text-align:center;font-size:14px;font-weight:600" id="cq-${it.id}">${it.qty} kg</span>
+        <button class="qb" onclick="chCartQty('${it.id}',0.5)">+</button>
+      </div>
+      <span style="font-size:15px;font-weight:700;min-width:60px;text-align:right;color:var(--pasta-deep)" id="cp-${it.id}">€ ${(it.qty*it.price).toFixed(2)}</span>
+      <button class="db" onclick="rmCart('${it.id}')" title="Rimuovi">🗑</button>
+    </div>`).join('');
+  updTotals();
+}
+
+function chCartQty(id, d) {
+  if (!cart[id]) return;
+  cart[id].qty = Math.round(Math.max(0.5, cart[id].qty + d) * 10) / 10;
+  const qe = document.getElementById('cq-' + id), pe = document.getElementById('cp-' + id);
+  if (qe) qe.textContent = cart[id].qty + ' kg';
+  if (pe) pe.textContent = '€ ' + (cart[id].qty * cart[id].price).toFixed(2);
+  updTotals();
+}
+
+function rmCart(id) {
+  delete cart[id]; delete qtys[id];
+  renderCart(); renderCat(); updCC(); toast('Prodotto rimosso');
+}
+
+function updTotals() {
+  const items = Object.values(cart);
+  const tot   = items.reduce((s, i) => s + i.qty * i.price, 0);
+  document.getElementById('ci-count').textContent = items.length + ' prodott' + (items.length === 1 ? 'o' : 'i');
+  document.getElementById('ci-total').textContent = '€ ' + tot.toFixed(2);
+}
+
+async function submitOrder() {
+  const nome    = document.getElementById('c-nome').value.trim();
+  const cognome = document.getElementById('c-cognome').value.trim();
+  const phone   = document.getElementById('c-phone').value.trim();
+  const email   = document.getElementById('c-email').value.trim();
+  if (!nome || !cognome || !phone || !email) { toast('⚠ Compila tutti i campi'); return; }
+  if (!email.includes('@')) { toast('⚠ Email non valida'); return; }
+  const btn = document.getElementById('sbtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Invio in corso...';
+  const code = 'ORD-' + Date.now().toString(36).toUpperCase();
+  try {
+    await sbInsert('orders', {
+      order_code:     code,
+      customer_name:  nome + ' ' + cognome,
+      phone, email,
+      archived:       false,
+      items:          JSON.stringify(Object.values(cart).map(i => ({ id:i.id, name:i.name, price:i.price, qty:i.qty })))
+    });
+    cart = {}; qtys = {}; updCC();
+    document.getElementById('succ-id').textContent   = code;
+    document.getElementById('succ-date').textContent = new Date().toLocaleString('it-IT');
+    showPg('success');
+  } catch(e) {
+    toast('⚠ Errore nell\'invio. Riprova.');
+    btn.disabled = false; btn.innerHTML = '📨 Invia ordine';
+    console.error(e);
+  }
+}
+
+function backCat() { showPg('catalog'); renderCat(); }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+loadProducts();
+</script>
+</body>
+</html>
