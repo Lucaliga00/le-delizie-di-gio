@@ -127,21 +127,6 @@
   .edit-card-btn:hover { background:var(--pasta-light); border-color:var(--pasta-dark); color:var(--pasta-deep); }
   .cat-count { font-size:13px; color:var(--muted); }
   .delivery-badge { display:inline-flex; align-items:center; gap:5px; background:#EEF2FF; color:#3730A3; border-radius:6px; padding:3px 10px; font-size:12px; font-weight:600; }
-
-  /* ===================== STILE STAMPA ===================== */
-  @media print {
-    body * { visibility: hidden; }
-    #print-area, #print-area * { visibility: visible; }
-    #print-area {
-      position: fixed; inset: 0;
-      padding: 32px 40px;
-      background: white;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
-    .no-print { display: none !important; }
-  }
-  #print-area { display:none; }
-  /* ======================================================== */
 </style>
 </head>
 <body>
@@ -279,9 +264,6 @@
   </div>
 </div>
 
-<!-- AREA DI STAMPA (invisibile, visibile solo in stampa) -->
-<div id="print-area"></div>
-
 <div class="toast" id="toast"></div>
 
 <script>
@@ -300,7 +282,8 @@ const headers = {
 };
 
 async function sbSelect(table, filter = '') {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}&order=created_at.desc`, { headers });
+  const order = table === 'settings' ? '' : '&order=created_at.desc';
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}${order}`, { headers });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
@@ -340,17 +323,21 @@ let shopImageUrl = '';
 ================================================================ */
 async function load() {
   try {
-    const [p, o, a, s] = await Promise.all([
+    [products, orders, archive] = await Promise.all([
       sbSelect('products'),
       sbSelect('orders', 'archived=eq.false'),
-      sbSelect('orders', 'archived=eq.true'),
-      sbSelect('settings')
+      sbSelect('orders', 'archived=eq.true')
     ]);
-    products = p; orders = o; archive = a;
+  } catch(e) { console.error('Errore caricamento dati:', e); products=[]; orders=[]; archive=[]; }
+
+  // Carica immagine negozio separatamente — se fallisce non blocca il resto
+  try {
+    const s = await sbSelect('settings');
     const imgSetting = Array.isArray(s) ? s.find(x => x.key === 'shop_image') : null;
-    shopImageUrl = imgSetting ? imgSetting.value : '';
+    shopImageUrl = (imgSetting && imgSetting.value) ? imgSetting.value : '';
     applyShopImage(shopImageUrl);
-  } catch(e) { console.error(e); products=[]; orders=[]; archive=[]; }
+  } catch(e) { console.warn('Settings non disponibili (tabella mancante?):', e); }
+
   renderAll();
 }
 
@@ -540,64 +527,88 @@ function printOrder() {
   const o = currentOrderForPrint; if (!o) return;
   const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
   const totale = items.reduce((s, i) => s + i.qty * i.price, 0);
+  const logoHtml = shopImageUrl
+    ? `<img src="${shopImageUrl}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid #E8C84A;margin-right:16px">`
+    : `<div style="width:64px;height:64px;border-radius:50%;background:#F5E48A;display:flex;align-items:center;justify-content:center;font-size:32px;margin-right:16px">🏪</div>`;
   const deliveryRow = o.delivery_date
-    ? `<tr><td style="color:#888;padding:8px 0;border-bottom:1px solid #eee">📅 Data consegna richiesta</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-weight:700;color:#3730A3">${fdDate(o.delivery_date)}</td></tr>`
+    ? `<tr><td style="color:#888;padding:6px 0;width:40%">📅 Consegna richiesta</td><td style="font-weight:700;color:#3730A3">${fdDate(o.delivery_date)}</td></tr>`
     : '';
   const righe = items.map(i => `
     <tr>
-      <td style="padding:10px 0;border-bottom:1px solid #eee">${i.name}</td>
-      <td style="padding:10px 0;border-bottom:1px solid #eee;text-align:center">${i.qty} kg</td>
-      <td style="padding:10px 0;border-bottom:1px solid #eee;text-align:right">€ ${parseFloat(i.price).toFixed(2)}/kg</td>
-      <td style="padding:10px 0;border-bottom:1px solid #eee;text-align:right;font-weight:700">€ ${(i.qty*i.price).toFixed(2)}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #eee">${i.name}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:center">${i.qty} kg</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:right">€ ${parseFloat(i.price).toFixed(2)}/kg</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:right;font-weight:700">€ ${(i.qty*i.price).toFixed(2)}</td>
     </tr>`).join('');
 
-  document.getElementById('print-area').innerHTML = `
-    <div style="max-width:600px;margin:0 auto">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid #E8C84A">
+  const html = `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Ordine ${o.order_code} — Le Delizie di Gio</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 32px 40px; color: #2C2C2A; }
+    @media print { @page { margin: 16mm; } }
+  </style>
+</head>
+<body>
+  <div style="max-width:620px;margin:0 auto">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:3px solid #E8C84A">
+      <div style="display:flex;align-items:center">
+        ${logoHtml}
         <div>
-          <div style="font-size:22px;font-weight:800;color:#8B6E10">⭐ Le Delizie di Gio</div>
-          <div style="font-size:13px;color:#888;margin-top:4px">Ordine stampato il ${new Date().toLocaleString('it-IT')}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:18px;font-weight:700;color:#2C2C2A">#${o.order_code}</div>
-          <div style="font-size:12px;color:#888">Data ordine: ${fd(o.created_at, true)}</div>
+          <div style="font-size:22px;font-weight:800;color:#8B6E10">Le Delizie di Gio</div>
+          <div style="font-size:12px;color:#888;margin-top:3px">Stampato il ${new Date().toLocaleString('it-IT')}</div>
         </div>
       </div>
-
-      <div style="margin-bottom:24px;background:#FBF3D0;border-radius:10px;padding:16px 20px">
-        <div style="font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Dati cliente</div>
-        <table style="width:100%;border-collapse:collapse;font-size:14px">
-          <tr><td style="color:#888;padding:5px 0;width:40%">Cliente</td><td style="font-weight:700">${o.customer_name}</td></tr>
-          <tr><td style="color:#888;padding:5px 0">Telefono</td><td>${o.phone}</td></tr>
-          <tr><td style="color:#888;padding:5px 0">Email</td><td>${o.email}</td></tr>
-          ${deliveryRow}
-        </table>
+      <div style="text-align:right">
+        <div style="font-size:20px;font-weight:800;color:#2C2C2A">#${o.order_code}</div>
+        <div style="font-size:12px;color:#888;margin-top:3px">Data ordine: ${fd(o.created_at, true)}</div>
       </div>
+    </div>
 
-      <div style="font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Prodotti ordinati</div>
+    <div style="background:#FBF3D0;border-radius:10px;padding:16px 20px;margin-bottom:24px">
+      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Dati cliente</div>
       <table style="width:100%;border-collapse:collapse;font-size:14px">
-        <thead>
-          <tr style="background:#F5E48A">
-            <th style="padding:10px 8px;text-align:left;font-size:12px;color:#8B6E10">Prodotto</th>
-            <th style="padding:10px 8px;text-align:center;font-size:12px;color:#8B6E10">Quantità</th>
-            <th style="padding:10px 8px;text-align:right;font-size:12px;color:#8B6E10">Prezzo/kg</th>
-            <th style="padding:10px 8px;text-align:right;font-size:12px;color:#8B6E10">Subtotale</th>
-          </tr>
-        </thead>
-        <tbody>${righe}</tbody>
+        <tr><td style="color:#888;padding:5px 0;width:38%">Cliente</td><td style="font-weight:700">${o.customer_name}</td></tr>
+        <tr><td style="color:#888;padding:5px 0">Telefono</td><td>${o.phone}</td></tr>
+        <tr><td style="color:#888;padding:5px 0">Email</td><td>${o.email}</td></tr>
+        ${deliveryRow}
       </table>
+    </div>
 
-      <div style="margin-top:16px;padding:14px 16px;background:#E8C84A;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:15px;font-weight:700;color:#8B6E10">Totale stimato</span>
-        <span style="font-size:20px;font-weight:800;color:#8B6E10">€ ${totale.toFixed(2)}</span>
-      </div>
+    <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Prodotti ordinati</div>
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <thead>
+        <tr style="background:#F5E48A">
+          <th style="padding:10px 8px;text-align:left;color:#8B6E10;font-size:12px">Prodotto</th>
+          <th style="padding:10px 8px;text-align:center;color:#8B6E10;font-size:12px">Quantità</th>
+          <th style="padding:10px 8px;text-align:right;color:#8B6E10;font-size:12px">Prezzo/kg</th>
+          <th style="padding:10px 8px;text-align:right;color:#8B6E10;font-size:12px">Subtotale</th>
+        </tr>
+      </thead>
+      <tbody>${righe}</tbody>
+    </table>
 
-      <div style="margin-top:28px;padding-top:16px;border-top:1px solid #eee;font-size:12px;color:#aaa;text-align:center">
-        Le Delizie di Gio — Grazie per il tuo ordine!
-      </div>
-    </div>`;
+    <div style="margin-top:16px;padding:14px 20px;background:#E8C84A;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:15px;font-weight:700;color:#8B6E10">Totale stimato</span>
+      <span style="font-size:22px;font-weight:800;color:#8B6E10">€ ${totale.toFixed(2)}</span>
+    </div>
 
-  window.print();
+    <div style="margin-top:32px;padding-top:16px;border-top:1px solid #eee;font-size:12px;color:#aaa;text-align:center">
+      Le Delizie di Gio — Grazie per il tuo ordine!
+    </div>
+
+  </div>
+  <script>window.onload = function(){ window.print(); }<\/script>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank', 'width=750,height=900');
+  win.document.write(html);
+  win.document.close();
 }
 
 /* ================================================================

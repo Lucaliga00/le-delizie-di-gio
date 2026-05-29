@@ -246,14 +246,16 @@ async function loadProducts() {
   document.getElementById('pgrid').style.display   = 'none';
   document.getElementById('cat-empty').style.display = 'none';
   try {
-    const [p, s] = await Promise.all([
-      sbSelect('products', 'order=name.asc'),
-      sbSelect('settings')
-    ]);
-    products = p;
+    products = await sbSelect('products', 'order=name.asc');
+  } catch(e) { products = []; }
+
+  // Carica immagine negozio separatamente
+  try {
+    const s = await sbSelect('settings');
     const imgSetting = Array.isArray(s) ? s.find(x => x.key === 'shop_image') : null;
     if (imgSetting && imgSetting.value) applyShopImage(imgSetting.value);
-  } catch(e) { products = []; }
+  } catch(e) { /* settings non ancora creata, non blocca */ }
+
   renderCat();
 }
 
@@ -263,7 +265,7 @@ function renderCat() {
   if (!products.length) { document.getElementById('cat-empty').style.display = 'block'; return; }
   g.style.display = 'grid';
   g.innerHTML = products.map(p => {
-    const qty = qtys[p.id] || 0.5;
+    const qty = qtys[p.id] || 0.1;
     const inC = cart[p.id] !== undefined;
     return `<div class="pcard">
       <div class="pimg-wrap">${p.image_url ? `<img src="${p.image_url}" alt="${p.name}">` : '🥗'}</div>
@@ -272,10 +274,10 @@ function renderCat() {
         <p class="pdesc">${p.description||''}</p>
         <p class="pprice">€ ${parseFloat(p.price).toFixed(2)}<span style="font-size:12px;font-weight:400;color:var(--muted)">/kg</span></p>
         <div class="qrow">
-          <button class="qb" onclick="chQty('${p.id}',-0.5)">−</button>
+          <button class="qb" onclick="chQty('${p.id}',-0.1)">−</button>
           <span class="qv" id="qty-${p.id}">${qty}</span>
           <span class="qu">kg</span>
-          <button class="qb" onclick="chQty('${p.id}',0.5)">+</button>
+          <button class="qb" onclick="chQty('${p.id}',0.1)">+</button>
         </div>
         <button class="addbtn ${inC?'added':''}" id="ab-${p.id}" onclick="addCart('${p.id}')">
           ${inC ? '✓ Aggiunto' : '+ Aggiungi al carrello'}
@@ -286,13 +288,13 @@ function renderCat() {
 }
 
 function chQty(id, d) {
-  qtys[id] = Math.round(Math.max(0.5, (qtys[id] || 0.5) + d) * 10) / 10;
+  qtys[id] = Math.round(Math.max(0.1, (qtys[id] || 0.1) + d) * 10) / 10;
   const el = document.getElementById('qty-' + id); if (el) el.textContent = qtys[id];
 }
 
 function addCart(id) {
   const p = products.find(x => x.id === id); if (!p) return;
-  cart[id] = { ...p, qty: qtys[id] || 0.5 };
+  cart[id] = { ...p, qty: qtys[id] || 0.1 };
   renderCat(); updCC(); toast(p.name + ' aggiunto al carrello ✓');
 }
 
@@ -324,9 +326,9 @@ function renderCart() {
         <p class="cip">€ ${parseFloat(it.price).toFixed(2)}/kg</p>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <button class="qb" onclick="chCartQty('${it.id}',-0.5)">−</button>
+        <button class="qb" onclick="chCartQty('${it.id}',-0.1)">−</button>
         <span style="min-width:44px;text-align:center;font-size:14px;font-weight:600" id="cq-${it.id}">${it.qty} kg</span>
-        <button class="qb" onclick="chCartQty('${it.id}',0.5)">+</button>
+        <button class="qb" onclick="chCartQty('${it.id}',0.1)">+</button>
       </div>
       <span style="font-size:15px;font-weight:700;min-width:60px;text-align:right;color:var(--pasta-deep)" id="cp-${it.id}">€ ${(it.qty*it.price).toFixed(2)}</span>
       <button class="db" onclick="rmCart('${it.id}')" title="Rimuovi">🗑</button>
@@ -336,7 +338,7 @@ function renderCart() {
 
 function chCartQty(id, d) {
   if (!cart[id]) return;
-  cart[id].qty = Math.round(Math.max(0.5, cart[id].qty + d) * 10) / 10;
+  cart[id].qty = Math.round(Math.max(0.1, cart[id].qty + d) * 10) / 10;
   const qe = document.getElementById('cq-' + id), pe = document.getElementById('cp-' + id);
   if (qe) qe.textContent = cart[id].qty + ' kg';
   if (pe) pe.textContent = '€ ' + (cart[id].qty * cart[id].price).toFixed(2);
