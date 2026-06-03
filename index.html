@@ -442,7 +442,7 @@ async function submitOrder() {
   const cap     = document.getElementById('c-cap') ? document.getElementById('c-cap').value.trim() : '';
   if (!nome || !cognome || !phone || !email) { toast('⚠ Compila tutti i campi obbligatori'); return; }
   if (!email.includes('@')) { toast('⚠ Email non valida'); return; }
-  if (deliveryType === 'spedizione' && (!address || !city || !cap)) { toast('⚠ Inserisci l'indirizzo completo per la spedizione'); return; }
+  if (deliveryType === 'spedizione' && (!address || !city || !cap)) { toast('⚠ Inserisci l\'indirizzo completo per la spedizione'); return; }
 
   const btn = document.getElementById('sbtn');
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Invio in corso...';
