@@ -79,6 +79,17 @@
   input[type=date] { cursor:pointer; }
 
   /* BOX DATA CONSEGNA */
+  /* Scelta spedizione/ritiro */
+  .delivery-choice { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px; }
+  .dc-btn { border:2px solid var(--bds); border-radius:12px; padding:16px; cursor:pointer; background:var(--white); font-family:inherit; transition:all .15s; text-align:center; }
+  .dc-btn:hover { border-color:var(--pasta-dark); background:var(--pasta-light); }
+  .dc-btn.selected { border-color:var(--pasta-dark); background:var(--pasta-light); }
+  .dc-btn .dc-icon { font-size:28px; display:block; margin-bottom:6px; }
+  .dc-btn .dc-label { font-size:14px; font-weight:700; color:var(--text); display:block; }
+  .dc-btn .dc-sub { font-size:11px; color:var(--muted); display:block; margin-top:2px; }
+  .dc-btn.selected .dc-label { color:var(--pasta-deep); }
+  .address-box { background:var(--white); border:1px solid var(--bds); border-radius:12px; padding:18px 20px; margin-bottom:18px; display:none; }
+  .address-box.show { display:block; }
   .date-box { background:var(--pasta-light); border:1px solid var(--pasta-dark); border-radius:12px; padding:18px 20px; margin-bottom:18px; }
   .date-box-title { font-size:14px; font-weight:700; color:var(--pasta-deep); margin-bottom:6px; display:flex; align-items:center; gap:8px; }
   .date-box-note { font-size:12px; color:var(--pasta-dark); margin-bottom:14px; line-height:1.5; background:var(--white); border-radius:8px; padding:10px 14px; border:1px solid var(--pasta-mid); }
@@ -157,22 +168,53 @@
           <div class="fgr"><label class="flbl">Email</label><input type="email" id="c-email" placeholder="mario@esempio.it"/></div>
         </div>
 
-        <!-- BOX DATA CONSEGNA -->
+        <!-- SCELTA SPEDIZIONE / RITIRO -->
+        <div style="margin-bottom:18px">
+          <label class="flbl" style="display:block;margin-bottom:10px">🚚 Come vuoi ricevere il tuo ordine?</label>
+          <div class="delivery-choice">
+            <button type="button" class="dc-btn selected" id="dc-ritiro" onclick="selectDelivery('ritiro')">
+              <span class="dc-icon">🏪</span>
+              <span class="dc-label">Ritiro in negozio</span>
+              <span class="dc-sub">Vieni a ritirare tu</span>
+            </button>
+            <button type="button" class="dc-btn" id="dc-spedizione" onclick="selectDelivery('spedizione')">
+              <span class="dc-icon">📦</span>
+              <span class="dc-label">Spedizione a domicilio</span>
+              <span class="dc-sub">Ti consegniamo noi</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- INDIRIZZO (solo se spedizione) -->
+        <div class="address-box" id="address-box">
+          <label class="flbl" style="display:block;margin-bottom:10px">📍 Indirizzo di consegna</label>
+          <div class="fgr" style="margin-bottom:10px">
+            <label class="flbl">Via / Piazza e numero civico</label>
+            <input type="text" id="c-address" placeholder="Via Roma 12"/>
+          </div>
+          <div class="frow" style="margin-bottom:0">
+            <div class="fgr"><label class="flbl">Città</label><input type="text" id="c-city" placeholder="Milano"/></div>
+            <div class="fgr"><label class="flbl">CAP</label><input type="text" id="c-cap" placeholder="20100"/></div>
+          </div>
+        </div>
+
+        <!-- DATA -->
         <div class="date-box">
-          <div class="date-box-title">📅 Data di ritiro preferita</div>
+          <div class="date-box-title" id="date-box-title">📅 Data di ritiro preferita</div>
           <div class="date-box-note">
-            Indica una data in cui vorresti ricevere il tuo ordine.<br>
+            Indica una data preferita.<br>
             <strong>Riceverai un messaggio di conferma o di proposta di modifica della data.</strong>
           </div>
           <div class="fgr">
-            <label class="flbl">Data preferita (opzionale)</label>
+            <label class="flbl" id="date-label">Data preferita (opzionale)</label>
             <input type="date" id="c-date" min="" />
           </div>
         </div>
 
+        <!-- ANNOTAZIONI -->
         <div class="notes-box">
           <div class="notes-box-title">📝 Annotazioni</div>
-          <textarea class="notes-textarea" id="c-notes" placeholder="Note"></textarea>
+          <textarea class="notes-textarea" id="c-notes" placeholder="Citofono, piano, orari preferiti, allergie..."></textarea>
         </div>
 
         <button class="sbtn" id="sbtn" onclick="submitOrder()">📨 Invia ordine</button>
@@ -193,6 +235,9 @@
       <p style="font-size:13px;color:var(--muted);margin-top:6px" id="succ-date"></p>
       <div id="succ-delivery-wrap" style="margin-top:12px;display:none">
         <div class="succ-delivery" id="succ-delivery"></div>
+      </div>
+      <div id="succ-type-wrap" style="margin-top:8px;display:none">
+        <div class="succ-delivery" id="succ-type" style="background:#FBF3D0;color:#8B6E10"></div>
       </div>
       <button class="sbtn" style="max-width:300px;margin:28px auto 0" onclick="backCat()">🧺 Torna al catalogo</button>
     </div>
@@ -244,6 +289,25 @@ function applyShopImage(url) {
 let products = [], cart = {}, qtys = {};
 
 // Imposta la data minima selezionabile (domani)
+let deliveryType = 'ritiro';
+
+function selectDelivery(type) {
+  deliveryType = type;
+  document.getElementById('dc-ritiro').classList.toggle('selected', type === 'ritiro');
+  document.getElementById('dc-spedizione').classList.toggle('selected', type === 'spedizione');
+  const addrBox = document.getElementById('address-box');
+  addrBox.classList.toggle('show', type === 'spedizione');
+  const titleEl = document.getElementById('date-box-title');
+  const labelEl = document.getElementById('date-label');
+  if (type === 'spedizione') {
+    if (titleEl) titleEl.textContent = '📅 Data di consegna preferita';
+    if (labelEl) labelEl.textContent = 'Data preferita (opzionale)';
+  } else {
+    if (titleEl) titleEl.textContent = '📅 Data di ritiro preferita';
+    if (labelEl) labelEl.textContent = 'Data preferita (opzionale)';
+  }
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -373,22 +437,29 @@ async function submitOrder() {
   const email   = document.getElementById('c-email').value.trim();
   const date    = document.getElementById('c-date').value;
   const notes   = document.getElementById('c-notes').value.trim();
+  const address = document.getElementById('c-address') ? document.getElementById('c-address').value.trim() : '';
+  const city    = document.getElementById('c-city') ? document.getElementById('c-city').value.trim() : '';
+  const cap     = document.getElementById('c-cap') ? document.getElementById('c-cap').value.trim() : '';
   if (!nome || !cognome || !phone || !email) { toast('⚠ Compila tutti i campi obbligatori'); return; }
   if (!email.includes('@')) { toast('⚠ Email non valida'); return; }
+  if (deliveryType === 'spedizione' && (!address || !city || !cap)) { toast('⚠ Inserisci l'indirizzo completo per la spedizione'); return; }
 
   const btn = document.getElementById('sbtn');
   btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Invio in corso...';
   const code = 'ORD-' + Date.now().toString(36).toUpperCase();
 
+  const fullAddress = deliveryType === 'spedizione' ? (address + ', ' + cap + ' ' + city).trim() : '';
   const orderData = {
     order_code:     code,
     customer_name:  nome + ' ' + cognome,
     phone, email,
     archived:       false,
+    delivery_type:  deliveryType,
     items:          JSON.stringify(Object.values(cart).map(i => ({ id:i.id, name:i.name, price:i.price, qty:i.qty })))
   };
   if (date) orderData.delivery_date = date;
   if (notes) orderData.notes = notes;
+  if (fullAddress) orderData.address = fullAddress;
 
   try {
     await sbInsert('orders', orderData);
@@ -396,10 +467,21 @@ async function submitOrder() {
     document.getElementById('succ-id').textContent   = code;
     document.getElementById('succ-date').textContent = 'Ordine ricevuto il ' + new Date().toLocaleString('it-IT');
 
-    // Mostra la data di consegna nella schermata di successo
+    // Tipo di consegna
+    const typeEl = document.getElementById('succ-type');
+    const typeWrap = document.getElementById('succ-type-wrap');
+    if (typeEl && typeWrap) {
+      typeEl.textContent = deliveryType === 'spedizione'
+        ? '📦 Spedizione a domicilio — ' + fullAddress
+        : '🏪 Ritiro in negozio';
+      typeWrap.style.display = 'block';
+    }
+
+    // Data preferita
     if (date) {
       const [y,m,d] = date.split('-');
-      document.getElementById('succ-delivery').textContent = '📅 Data richiesta: ' + d + '/' + m + '/' + y + ' — Ti contatteremo per conferma';
+      const dateLabel = deliveryType === 'spedizione' ? 'Consegna richiesta' : 'Ritiro richiesto';
+      document.getElementById('succ-delivery').textContent = '📅 ' + dateLabel + ': ' + d + '/' + m + '/' + y + ' — Ti contatteremo per conferma';
       document.getElementById('succ-delivery-wrap').style.display = 'block';
     } else {
       document.getElementById('succ-delivery-wrap').style.display = 'none';

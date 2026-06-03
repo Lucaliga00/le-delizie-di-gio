@@ -139,6 +139,8 @@
   .edit-card-btn:hover { background:var(--pasta-light); border-color:var(--pasta-dark); color:var(--pasta-deep); }
   .cat-count { font-size:13px; color:var(--muted); }
   .delivery-badge { display:inline-flex; align-items:center; gap:5px; background:#EEF2FF; color:#3730A3; border-radius:6px; padding:3px 10px; font-size:12px; font-weight:600; }
+  .type-badge-ritiro { display:inline-flex; align-items:center; gap:5px; background:var(--pasta-light); color:var(--pasta-deep); border-radius:6px; padding:3px 10px; font-size:12px; font-weight:600; }
+  .type-badge-sped { display:inline-flex; align-items:center; gap:5px; background:#F0FDF4; color:#166534; border-radius:6px; padding:3px 10px; font-size:12px; font-weight:600; }
 </style>
 </head>
 <body>
@@ -531,9 +533,14 @@ function openOrd(id, fromArc = false) {
     ? `<div class="dr"><span class="dl">📅 Data ritiro richiesto</span><span class="delivery-badge">📅 ${fdDate(o.delivery_date)}</span></div>`
     : '';
   document.getElementById('m-title').textContent = 'Ordine #' + o.order_code;
+  const typeBadge = o.delivery_type === 'spedizione'
+    ? `<span class="type-badge-sped">📦 Spedizione a domicilio</span>`
+    : `<span class="type-badge-ritiro">🏪 Ritiro in negozio</span>`;
   document.getElementById('m-body').innerHTML = `
     <div class="dr"><span class="dl">Codice ordine</span><code>${o.order_code}</code></div>
     <div class="dr"><span class="dl">Data ordine</span><span>${fd(o.created_at, true)}</span></div>
+    <div class="dr"><span class="dl">Tipo consegna</span>${typeBadge}</div>
+    ${o.address ? `<div class="dr"><span class="dl">📍 Indirizzo</span><span style="font-weight:600">${o.address}</span></div>` : ''}
     ${deliveryHtml}
     <div class="dr"><span class="dl">Cliente</span><strong>${o.customer_name}</strong></div>
     <div class="dr"><span class="dl">Telefono</span><span>${o.phone}</span></div>
@@ -837,16 +844,20 @@ function hideTip() {
 function rOrders() {
   const el = document.getElementById('ord-wrap');
   if (!orders.length) { el.innerHTML = '<div class="es"><div class="es-icon">📋</div>Nessun ordine in attesa</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>Codice</th><th>Cliente</th><th>Telefono</th><th>Ritiro richiesto</th><th>Data ordine</th><th>Articoli</th><th>Azioni</th></tr></thead><tbody>
+  el.innerHTML = `<table><thead><tr><th>Codice</th><th>Cliente</th><th>Telefono</th><th>Consegna</th><th>Data richiesta</th><th>Data ordine</th><th>Articoli</th><th>Azioni</th></tr></thead><tbody>
     ${orders.map(o => {
       const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
       const delivBadge = o.delivery_date
         ? `<span class="delivery-badge">📅 ${fdDate(o.delivery_date)}</span>`
         : `<span style="color:var(--muted);font-size:12px">—</span>`;
+      const typeBadgeRow = o.delivery_type === 'spedizione'
+        ? `<span class="type-badge-sped">📦 Sped.</span>`
+        : `<span class="type-badge-ritiro">🏪 Ritiro</span>`;
       return `<tr class="or" onclick="openOrd('${o.id}')">
         <td><code style="font-size:11px;color:var(--muted)">${o.order_code}</code></td>
         <td><strong>${o.customer_name}</strong></td>
         <td>${o.phone}</td>
+        <td>${typeBadgeRow}</td>
         <td>${delivBadge}</td>
         <td>${fd(o.created_at)}</td>
         <td>${items.length} art.</td>
@@ -863,15 +874,19 @@ function rOrders() {
 function rArchive() {
   const el = document.getElementById('arc-wrap');
   if (!archive.length) { el.innerHTML = '<div class="es"><div class="es-icon">📦</div>Nessun ordine archiviato</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>Codice</th><th>Cliente</th><th>Email</th><th>Ritiro richiesto</th><th>Data ordine</th><th>Archiviato il</th><th>Articoli</th><th>Azioni</th></tr></thead><tbody>
+  el.innerHTML = `<table><thead><tr><th>Codice</th><th>Cliente</th><th>Email</th><th>Consegna</th><th>Data richiesta</th><th>Data ordine</th><th>Archiviato il</th><th>Articoli</th><th>Azioni</th></tr></thead><tbody>
     ${archive.map(o => {
       const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]');
       const delivBadge = o.delivery_date
         ? `<span class="delivery-badge">📅 ${fdDate(o.delivery_date)}</span>`
         : `<span style="color:var(--muted);font-size:12px">—</span>`;
+      const typeBadgeArc = o.delivery_type === 'spedizione'
+        ? `<span class="type-badge-sped">📦 Sped.</span>`
+        : `<span class="type-badge-ritiro">🏪 Ritiro</span>`;
       return `<tr class="or" onclick="openOrd('${o.id}',true)">
         <td><code style="font-size:11px;color:var(--muted)">${o.order_code}</code></td>
         <td><strong>${o.customer_name}</strong></td><td>${o.email}</td>
+        <td>${typeBadgeArc}</td>
         <td>${delivBadge}</td>
         <td>${fd(o.created_at)}</td><td>${fd(o.archived_at)}</td>
         <td>${items.length} art.</td>
