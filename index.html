@@ -309,9 +309,9 @@ function selectDelivery(type) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  document.getElementById('c-date').min = tomorrow.toISOString().split('T')[0];
+  const minDate = new Date();
+  minDate.setDate(minDate.getDate() + 3);
+  document.getElementById('c-date').min = minDate.toISOString().split('T')[0];
 });
 
 async function loadProducts() {
